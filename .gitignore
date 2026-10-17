@@ -1,42 +1,19 @@
-# Node / Frontend
-node_modules/
-.next/
-out/
-build/
-
-# Python / Backend / AI Service
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-env/
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-.env
-.env*.local
-.venv
+# Virtual environments
+.venv/
 venv/
 ENV/
 
-# Database
-*.sqlite
-*.sqlite3
-*.db
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
 
-# Operating System
+# Environment variables
+.env
+
+# Generated static image assets
+static/masked_*.jpg
+
+# OS files
 .DS_Store
 Thumbs.db
