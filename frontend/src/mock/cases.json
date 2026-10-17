@@ -1,0 +1,190 @@
+{
+  "cases": [
+    {
+      "case_id": "case_cardio_101",
+      "title": "34M Post-Harvest Acute Chest Pain with ST Elevation (Rural Bihar)",
+      "specialty_tag": "c/CardioEmergency",
+      "author_pseudonym": "Dr_Kosi_Care",
+      "author_badge": "Verified Spoke Physician, 4 yrs",
+      "patient_age": 34,
+      "patient_gender": "Male",
+      "urgency_score": 92,
+      "bounty_amount": 350,
+      "status": "open",
+      "consensus_score": 75,
+      "comments_count": 4,
+      "has_ai_pin": true,
+      "created_at": "2026-10-17T14:30:00Z"
+    },
+    {
+      "case_id": "case_neuro_204",
+      "title": "62F Sudden Right-Sided Hemiparesis & Dysphasia with NIHSS 14",
+      "specialty_tag": "c/Neurology",
+      "author_pseudonym": "Dr_Kosi_Care",
+      "author_badge": "Verified Spoke Physician, 4 yrs",
+      "patient_age": 62,
+      "patient_gender": "Female",
+      "urgency_score": 98,
+      "bounty_amount": 350,
+      "status": "open",
+      "consensus_score": 60,
+      "comments_count": 2,
+      "has_ai_pin": true,
+      "created_at": "2026-10-17T14:40:00Z"
+    },
+    {
+      "case_id": "case_peds_305",
+      "title": "7yo High Spiking Fever (Day 5), Thrombocytopenia (42k) & Hepatomegaly",
+      "specialty_tag": "c/Pediatrics",
+      "author_pseudonym": "Dr_Kosi_Care",
+      "author_badge": "Verified Spoke Physician, 4 yrs",
+      "patient_age": 7,
+      "patient_gender": "Male",
+      "urgency_score": 85,
+      "bounty_amount": 350,
+      "status": "open",
+      "consensus_score": 80,
+      "comments_count": 3,
+      "has_ai_pin": true,
+      "created_at": "2026-10-17T13:15:00Z"
+    },
+    {
+      "case_id": "case_med_406",
+      "title": "45M Organophosphate Exposure with Cholinergic Crisis & Bronchorrhea",
+      "specialty_tag": "c/GeneralMedicine",
+      "author_pseudonym": "Dr_Kosi_Care",
+      "author_badge": "Verified Spoke Physician, 4 yrs",
+      "patient_age": 45,
+      "patient_gender": "Male",
+      "urgency_score": 94,
+      "bounty_amount": 350,
+      "status": "resolved",
+      "consensus_score": 90,
+      "comments_count": 5,
+      "has_ai_pin": true,
+      "created_at": "2026-10-17T12:00:00Z"
+    }
+  ],
+  "caseDetails": {
+    "case_cardio_101": {
+      "case_id": "case_cardio_101",
+      "title": "34M Post-Harvest Acute Chest Pain with ST Elevation",
+      "specialty_tag": "c/CardioEmergency",
+      "author_pseudonym": "Dr_Kosi_Care",
+      "author_badge": "Verified Spoke Physician, 4 yrs",
+      "patient_demographics": { "age": 34, "gender": "Male" },
+      "chief_complaint": "Severe retrosternal crushing chest pain",
+      "vitals": { "bp": "90/60 mmHg", "pulse": 118, "spo2": 91, "temp": 98.4 },
+      "history": "Farmer, heavy lifting during paddy harvest. No prior known cardiac history. Smoker.",
+      "labs_and_ecg": "ST elevation leads V2-V5. Troponin T positive.",
+      "imaging_urls": ["/uploads/cases/ecg_anonymized_01.jpg"],
+      "bounty_amount": 350,
+      "urgency_score": 92,
+      "consensus_status": "in_progress",
+      "consensus_percentage": 75,
+      "leading_diagnosis": "Acute Anterior STEMI with Cardiogenic Shock Risk",
+      "comments": [
+        {
+          "comment_id": "comm_882",
+          "author_pseudonym": "Dr_Pulse_9482",
+          "author_badge": "Verified Cardiologist, 8 yrs",
+          "vote_weight": 5,
+          "content": "Immediate loading dose: Aspirin 325mg + Clopidogrel 300mg + Atorvastatin 80mg. Administer Tenecteplase if PCI transfer > 120 mins.",
+          "suggested_diagnosis": "Acute Anterior STEMI",
+          "upvotes": 12,
+          "created_at": "2026-10-17T14:45:00Z"
+        }
+      ]
+    },
+    "case_neuro_204": {
+      "case_id": "case_neuro_204",
+      "title": "62F Sudden Right-Sided Hemiparesis & Dysphasia with NIHSS 14",
+      "specialty_tag": "c/Neurology",
+      "author_pseudonym": "Dr_Kosi_Care",
+      "author_badge": "Verified Spoke Physician, 4 yrs",
+      "patient_demographics": { "age": 62, "gender": "Female" },
+      "chief_complaint": "Acute onset right hemiplegia and expressive aphasia 90 mins ago",
+      "vitals": { "bp": "180/100 mmHg", "pulse": 88, "spo2": 96, "temp": 98.6 },
+      "history": "Hypertensive on irregular medication. Symptom onset 14:00 today while talking to family.",
+      "labs_and_ecg": "Non-contrast CT brain excluded hemorrhage. Dense MCA sign seen.",
+      "imaging_urls": [],
+      "bounty_amount": 350,
+      "urgency_score": 98,
+      "consensus_status": "in_progress",
+      "consensus_percentage": 60,
+      "leading_diagnosis": "Acute Ischemic Stroke (LVO - Left MCA territory)",
+      "comments": [
+        {
+          "comment_id": "comm_890",
+          "author_pseudonym": "Dr_Synapse_71",
+          "author_badge": "Verified Neurologist, 12 yrs",
+          "vote_weight": 5,
+          "content": "Patient is well within 4.5 hour IV thrombolysis window. Lower BP to <185/110 with IV Labetalol then start IV Alteplase / Tenecteplase stat.",
+          "suggested_diagnosis": "Acute Ischemic Stroke (LVO)",
+          "upvotes": 8,
+          "created_at": "2026-10-17T14:50:00Z"
+        }
+      ]
+    },
+    "case_peds_305": {
+      "case_id": "case_peds_305",
+      "title": "7yo High Spiking Fever (Day 5), Thrombocytopenia (42k) & Hepatomegaly",
+      "specialty_tag": "c/Pediatrics",
+      "author_pseudonym": "Dr_Kosi_Care",
+      "author_badge": "Verified Spoke Physician, 4 yrs",
+      "patient_demographics": { "age": 7, "gender": "Male" },
+      "chief_complaint": "Persistent high-grade fever, petechial rash on shins, abdominal pain",
+      "vitals": { "bp": "96/64 mmHg", "pulse": 126, "spo2": 97, "temp": 102.8 },
+      "history": "Fever for 5 days refractory to paracetamol. Severe lethargy today.",
+      "labs_and_ecg": "Platelets 42,000/uL, Hematocrit 44%, NS1 Antigen Positive.",
+      "imaging_urls": [],
+      "bounty_amount": 350,
+      "urgency_score": 85,
+      "consensus_status": "in_progress",
+      "consensus_percentage": 80,
+      "leading_diagnosis": "Dengue Hemorrhagic Fever with Plasma Leakage Warning Signs",
+      "comments": [
+        {
+          "comment_id": "comm_901",
+          "author_pseudonym": "Dr_ChildFirst",
+          "author_badge": "Verified Pediatrician, 6 yrs",
+          "vote_weight": 3,
+          "content": "Begin isotonic crystalloid (Ringer's Lactate) at 5-7 ml/kg/hr for critical 24-48 hr leakage phase. Avoid NSAIDs and IM injections.",
+          "suggested_diagnosis": "Dengue Shock Risk",
+          "upvotes": 5,
+          "created_at": "2026-10-17T13:30:00Z"
+        }
+      ]
+    },
+    "case_med_406": {
+      "case_id": "case_med_406",
+      "title": "45M Organophosphate Exposure with Cholinergic Crisis & Bronchorrhea",
+      "specialty_tag": "c/GeneralMedicine",
+      "author_pseudonym": "Dr_Kosi_Care",
+      "author_badge": "Verified Spoke Physician, 4 yrs",
+      "patient_demographics": { "age": 45, "gender": "Male" },
+      "chief_complaint": "Accidental inhalation of pesticide spray while spraying paddy",
+      "vitals": { "bp": "100/60 mmHg", "pulse": 48, "spo2": 88, "temp": 97.8 },
+      "history": "Farmer brought unconscious with miosis, copious oral secretions, muscle fasciculations.",
+      "labs_and_ecg": "Pseudocholinesterase levels severely depressed.",
+      "imaging_urls": [],
+      "bounty_amount": 350,
+      "urgency_score": 94,
+      "consensus_status": "resolved",
+      "consensus_percentage": 90,
+      "leading_diagnosis": "Acute Severe Organophosphate Poisoning",
+      "comments": [
+        {
+          "comment_id": "comm_915",
+          "author_pseudonym": "Dr_ToxicDoc",
+          "author_badge": "Verified Intensivist, 10 yrs",
+          "vote_weight": 5,
+          "content": "Atropinization is paramount: IV Atropine 2-4mg doubled every 5-10 mins until secretions dry. Concurrently administer Pralidoxime (PAM).",
+          "suggested_diagnosis": "Acute Severe Organophosphate Poisoning",
+          "upvotes": 15,
+          "created_at": "2026-10-17T12:15:00Z"
+        }
+      ]
+    }
+  }
+}

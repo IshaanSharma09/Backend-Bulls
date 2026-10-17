@@ -1,0 +1,54 @@
+{
+  "queue": [
+    {
+      "slot_id": "slot_01",
+      "time": "15:30",
+      "patient_masked": "P**** K**** (34M)",
+      "spoke_origin": "Kosi Rural Health Spoke",
+      "urgency_score": 92,
+      "status": "confirmed",
+      "fee_split": { "patient_paid": 500, "spoke_share": 150, "hub_fee": 350 }
+    },
+    {
+      "slot_id": "slot_02",
+      "time": "15:45",
+      "patient_masked": "A**** D**** (52F)",
+      "spoke_origin": "Purnia Clinic Spoke",
+      "urgency_score": 58,
+      "status": "booked",
+      "fee_split": { "patient_paid": 500, "spoke_share": 150, "hub_fee": 350 }
+    },
+    {
+      "slot_id": "slot_03",
+      "time": "16:00",
+      "patient_masked": "R**** S**** (41M)",
+      "spoke_origin": "Saharsa Primary Clinic",
+      "urgency_score": 72,
+      "status": "booked",
+      "fee_split": { "patient_paid": 500, "spoke_share": 150, "hub_fee": 350 }
+    },
+    {
+      "slot_id": "slot_04",
+      "time": "16:15",
+      "patient_masked": "V**** N**** (29F)",
+      "spoke_origin": "Kishanganj Health Center",
+      "urgency_score": 64,
+      "status": "booked",
+      "fee_split": { "patient_paid": 500, "spoke_share": 150, "hub_fee": 350 }
+    }
+  ],
+  "simulatedCancellation": {
+    "cancelled_slot": "slot_02",
+    "event": "INSTANT_GAP_DETECTED",
+    "promoted_patient": {
+      "b2b_ticket_id": "tkt_rural_urgent_902",
+      "patient_masked": "M**** S**** (45M)",
+      "spoke_hospital": "Araria Spoke Clinic",
+      "diagnosis": "Suspected Intracranial Bleed / Hypertensive Encephalopathy",
+      "urgency_score": 96,
+      "wait_time_minutes": 14,
+      "reallocated_time_slot": "15:45",
+      "time_saved_minutes": 45
+    }
+  }
+}

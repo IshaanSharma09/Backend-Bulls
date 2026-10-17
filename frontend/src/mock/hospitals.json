@@ -1,0 +1,40 @@
+{
+  "hospitals": [
+    {
+      "hospital_id": "hosp_metro_apex",
+      "name": "Apex Metro Super Specialty Hospital",
+      "city": "Mumbai",
+      "state": "Maharashtra",
+      "review_count": 6,
+      "is_unlocked": true,
+      "scores": {
+        "workload": 2.4,
+        "safety": 4.5,
+        "bullying_free": 3.8,
+        "pay_fairness": 4.1,
+        "equipment": 4.8,
+        "overall_culture": 3.9
+      }
+    },
+    {
+      "hospital_id": "hosp_district_purnia",
+      "name": "Purnia Regional Medical Center",
+      "city": "Purnia",
+      "state": "Bihar",
+      "review_count": 4,
+      "is_unlocked": false,
+      "reviews_needed_to_unlock": 1,
+      "scores": null
+    },
+    {
+      "hospital_id": "hosp_kosi_spoke",
+      "name": "Kosi Rural Health Spoke Center",
+      "city": "Saharsa",
+      "state": "Bihar",
+      "review_count": 2,
+      "is_unlocked": false,
+      "reviews_needed_to_unlock": 3,
+      "scores": null
+    }
+  ]
+}
