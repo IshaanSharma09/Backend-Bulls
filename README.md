@@ -12,7 +12,7 @@ MedNexus is an end-to-end clinical workflow operating system structured as a cle
 | Service | Machine Role | Core Technologies | Primary Owner / Contributor |
 | :--- | :--- | :--- | :--- |
 | **Frontend** (`./frontend`) | Laptop 1 | Next.js 14, Tailwind CSS, Spline 3D, TypeScript | **Ishaan Sharma** (`@IshaanSharma09`) |
-| **Core Backend** (`./backend`) | Laptop 2 | FastAPI, SQLite, Pydantic, Python 3.11 | **Backend Lead** (Laptop 2) |
+| **Core Backend** (`./backend`) | Laptop 2 | FastAPI, SQLite, Pydantic, Python 3.10+ | **Yash Sharma** (`@yashsharma1388`) |
 | **AI Intelligence** (`./ai-service`) | Laptop 3 | FastAPI, Google Gemini API, PHI Sanitizer | **AI Engineer** (Laptop 3) |
 
 ---
