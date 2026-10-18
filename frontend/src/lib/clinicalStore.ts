@@ -154,6 +154,17 @@ export interface PrescriptionInput {
   janAushadhiPrice?: number;
 }
 
+export interface DigitalPrescription {
+  id: string;
+  patientId: string;
+  medicationName: string;
+  dosage: string;
+  prescribedBy: string;
+  prescribedDate: string;
+  prescribedTime: string;
+  status: "Active" | "Completed" | "Discontinued";
+}
+
 export interface DoctorProfile {
   id: string;
   hospitalId: string;
@@ -209,6 +220,39 @@ const INITIAL_MEDICATIONS: ActiveMedication[] = [
     mrpPrice: 28.0,
     janAushadhiPrice: 4.5,
     takenToday: false,
+  },
+];
+
+const INITIAL_DIGITAL_PRESCRIPTIONS: DigitalPrescription[] = [
+  {
+    id: "rx-101",
+    patientId: "RAMESH-54",
+    medicationName: "Aspirin Chewable",
+    dosage: "75 mg once daily after breakfast",
+    prescribedBy: "Dr. Rajesh Sharma (Chief Medical Officer & Cardiology, IIIT Delhi Hospital)",
+    prescribedDate: "17 Oct 2026",
+    prescribedTime: "10:30 AM",
+    status: "Active",
+  },
+  {
+    id: "rx-102",
+    patientId: "RAMESH-54",
+    medicationName: "Atorvastatin Tablet",
+    dosage: "20 mg once daily at bedtime",
+    prescribedBy: "Dr. Rajesh Sharma (Chief Medical Officer & Cardiology, IIIT Delhi Hospital)",
+    prescribedDate: "15 Oct 2026",
+    prescribedTime: "11:15 AM",
+    status: "Active",
+  },
+  {
+    id: "rx-103",
+    patientId: "RAMESH-54",
+    medicationName: "Metoprolol Succinate",
+    dosage: "25 mg once daily in the morning",
+    prescribedBy: "Dr. Neha Kapoor (Internal Medicine & Diagnostics, IIIT Delhi Hospital)",
+    prescribedDate: "12 Oct 2026",
+    prescribedTime: "04:45 PM",
+    status: "Active",
   },
 ];
 
@@ -524,6 +568,7 @@ const INITIAL_DOCTORS: DoctorProfile[] = [
 
 class ClinicalStore {
   private medications: ActiveMedication[] = INITIAL_MEDICATIONS;
+  private digitalPrescriptions: DigitalPrescription[] = INITIAL_DIGITAL_PRESCRIPTIONS;
   private accessCode: DynamicPatientAccessCode = {
     patientId: "RAMESH-54",
     code: "849201",
@@ -545,6 +590,9 @@ class ClinicalStore {
         const m = localStorage.getItem("mn_medications");
         if (m) this.medications = JSON.parse(m);
 
+        const rx = localStorage.getItem("mn_digital_prescriptions");
+        if (rx) this.digitalPrescriptions = JSON.parse(rx);
+
         const code = localStorage.getItem("mn_patient_code");
         if (code) this.accessCode = JSON.parse(code);
 
@@ -564,6 +612,7 @@ class ClinicalStore {
     if (typeof window !== "undefined") {
       try {
         localStorage.setItem("mn_medications", JSON.stringify(this.medications));
+        localStorage.setItem("mn_digital_prescriptions", JSON.stringify(this.digitalPrescriptions));
         localStorage.setItem("mn_patient_code", JSON.stringify(this.accessCode));
         localStorage.setItem("mn_queue_slots", JSON.stringify(this.queueSlots));
         localStorage.setItem("mn_waiting_patients", JSON.stringify(this.waitingPatients));
@@ -615,7 +664,14 @@ class ClinicalStore {
   public verifyPatientAccess(
     patientId: string,
     enteredCode: string
-  ): { success: boolean; error?: string; patient?: AIHealthReport; profile?: PatientHealthProfile; medications?: ActiveMedication[] } {
+  ): {
+    success: boolean;
+    error?: string;
+    patient?: AIHealthReport;
+    profile?: PatientHealthProfile;
+    medications?: ActiveMedication[];
+    prescriptions?: DigitalPrescription[];
+  } {
     const pId = patientId.trim().toUpperCase();
     const code = enteredCode.trim();
 
@@ -654,6 +710,7 @@ class ClinicalStore {
       patient: { ...this.aiReport },
       profile: this.getHealthProfile(),
       medications: [...this.medications],
+      prescriptions: this.getDigitalPrescriptions(pId),
     };
   }
 
@@ -995,6 +1052,93 @@ class ClinicalStore {
     this.persist();
 
     return { success: true, prescription: newMed };
+  }
+
+  // --- Digital Prescriptions (Clinician Issued via 6-Digit Code) ---
+  public getDigitalPrescriptions(patientId?: string): DigitalPrescription[] {
+    if (!patientId || patientId === "ALL") {
+      return [...this.digitalPrescriptions];
+    }
+    const pId = patientId.trim().toUpperCase();
+    return this.digitalPrescriptions.filter(
+      (p) => p.patientId.toUpperCase() === pId || pId.includes(p.patientId.toUpperCase()) || p.patientId === "RAMESH-54"
+    );
+  }
+
+  public addDigitalPrescription(data: {
+    patientId: string;
+    medicationName: string;
+    dosage: string;
+    prescribedBy: string;
+  }): { success: boolean; prescription?: DigitalPrescription; error?: string } {
+    if (!data.medicationName || !data.medicationName.trim()) {
+      return { success: false, error: "Medication or injection name is required." };
+    }
+    if (!data.dosage || !data.dosage.trim()) {
+      return { success: false, error: "Dosage is required." };
+    }
+
+    // Safety Allergy Check against patient's allergies
+    const medLower = data.medicationName.toLowerCase();
+    const allergens = this.healthProfile.allergies.map((a) => a.toLowerCase());
+    const isContraindicated = allergens.some((allergy) => {
+      if (
+        allergy.includes("penicillin") &&
+        (medLower.includes("penicillin") || medLower.includes("amoxicillin") || medLower.includes("ampicillin") || medLower.includes("augmentin"))
+      ) {
+        return true;
+      }
+      if (
+        (allergy.includes("ibuprofen") || allergy.includes("nsaid")) &&
+        (medLower.includes("ibuprofen") ||
+          medLower.includes("brufen") ||
+          medLower.includes("combiflam") ||
+          medLower.includes("diclofenac") ||
+          medLower.includes("naproxen"))
+      ) {
+        return true;
+      }
+      return false;
+    });
+
+    if (isContraindicated) {
+      return {
+        success: false,
+        error: `SAFETY ALERT: ${data.medicationName} is contraindicated against the patient's documented allergies. Prescription blocked by clinical safety engine.`,
+      };
+    }
+
+    const newRx: DigitalPrescription = {
+      id: `rx-${Date.now()}`,
+      patientId: data.patientId || "RAMESH-54",
+      medicationName: data.medicationName.trim(),
+      dosage: data.dosage.trim(),
+      prescribedBy: data.prescribedBy || "Dr. Rajesh Sharma",
+      prescribedDate: new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }),
+      prescribedTime: new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }),
+      status: "Active",
+    };
+
+    this.digitalPrescriptions.unshift(newRx);
+
+    // Sync into currentMedicines in patient's profile
+    this.healthProfile.currentMedicines.unshift({
+      id: newRx.id,
+      name: newRx.medicationName,
+      dose: newRx.dosage,
+      frequency: "As prescribed",
+      instructions: `Prescribed by ${newRx.prescribedBy}`,
+    });
+
+    this.persist();
+    return { success: true, prescription: newRx };
+  }
+
+  public deleteDigitalPrescription(id: string): boolean {
+    this.digitalPrescriptions = this.digitalPrescriptions.filter((p) => p.id !== id);
+    this.healthProfile.currentMedicines = this.healthProfile.currentMedicines.filter((m) => m.id !== id);
+    this.persist();
+    return true;
   }
 
   public getAllDoctors(): DoctorProfile[] {

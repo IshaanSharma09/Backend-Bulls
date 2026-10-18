@@ -12,6 +12,7 @@ import {
   DoctorProfile,
   PatientHealthProfile,
   PatientLabFile,
+  DigitalPrescription,
 } from "../../lib/clinicalStore";
 import {
   Building2,
@@ -88,6 +89,13 @@ function DoctorHospitalDashboardContent() {
   const [editSlotNotes, setEditSlotNotes] = useState("");
   const [viewingLabFile, setViewingLabFile] = useState<PatientLabFile | null>(null);
 
+  // Digital Prescription State for Clinician
+  const [newRxMedName, setNewRxMedName] = useState("");
+  const [newRxDosage, setNewRxDosage] = useState("");
+  const [rxSuccessMsg, setRxSuccessMsg] = useState<string | null>(null);
+  const [rxErrorMsg, setRxErrorMsg] = useState<string | null>(null);
+  const [patientPrescriptions, setPatientPrescriptions] = useState<DigitalPrescription[]>([]);
+
   useEffect(() => {
     const tabParam = searchParams.get("tab");
     if (tabParam === "queue" || tabParam === "roster" || tabParam === "search") {
@@ -101,11 +109,14 @@ function DoctorHospitalDashboardContent() {
       setWaitingPatients(clinicalStore.getWaitingPatients());
       setHospitalPatients(clinicalStore.getHospitalPatients(currentHospitalId));
       setHospitalDoctors(clinicalStore.getHospitalDoctors(currentHospitalId));
+      if (unlockedPatient) {
+        setPatientPrescriptions(clinicalStore.getDigitalPrescriptions(unlockedPatient.profile.patientId));
+      }
     };
     sync();
     const unsub = clinicalStore.subscribe(sync);
     return () => unsub();
-  }, [currentHospitalId]);
+  }, [currentHospitalId, unlockedPatient]);
 
   const showNotification = (msg: string) => {
     setQueueNotice(msg);
@@ -128,6 +139,7 @@ function DoctorHospitalDashboardContent() {
       setUnlockedPatient({
         profile: res.profile,
       });
+      setPatientPrescriptions(res.prescriptions || clinicalStore.getDigitalPrescriptions(searchPatientId));
       setLookupError(null);
     }
   };
@@ -136,6 +148,46 @@ function DoctorHospitalDashboardContent() {
     setUnlockedPatient(null);
     setEnteredConsentCode("");
     setLookupError(null);
+    setPatientPrescriptions([]);
+  };
+
+  // Issue Digital Prescription for Unlocked Patient
+  const handleIssuePrescription = (e: React.FormEvent) => {
+    e.preventDefault();
+    setRxErrorMsg(null);
+    setRxSuccessMsg(null);
+
+    if (!newRxMedName.trim() || !newRxDosage.trim()) {
+      setRxErrorMsg("Please enter both medication or injection name and dosage.");
+      return;
+    }
+
+    const pId = unlockedPatient?.profile.patientId || "RAMESH-54";
+    const res = clinicalStore.addDigitalPrescription({
+      patientId: pId,
+      medicationName: newRxMedName.trim(),
+      dosage: newRxDosage.trim(),
+      prescribedBy: `${currentDoctorName} (${currentDoctorSpecialty}, ${currentHospitalName})`,
+    });
+
+    if (!res.success) {
+      setRxErrorMsg(res.error || "Could not save prescription.");
+      return;
+    }
+
+    setNewRxMedName("");
+    setNewRxDosage("");
+    setRxSuccessMsg(`Prescription for "${res.prescription?.medicationName}" saved! Instantly available in patient's portal under Prescription History.`);
+    setPatientPrescriptions(clinicalStore.getDigitalPrescriptions(pId));
+    showNotification("Digital prescription saved to patient record.");
+    setTimeout(() => setRxSuccessMsg(null), 5000);
+  };
+
+  const handleDeletePrescription = (id: string) => {
+    clinicalStore.deleteDigitalPrescription(id);
+    const pId = unlockedPatient?.profile.patientId || "RAMESH-54";
+    setPatientPrescriptions(clinicalStore.getDigitalPrescriptions(pId));
+    showNotification("Prescription removed.");
   };
 
   // --- Smart Queue Cancellation & Slot Flagging ---
@@ -723,18 +775,138 @@ DIAGNOSTIC INTERPRETATION:
                 </div>
               </div>
 
-              {/* Current Medicines */}
-              <div className="space-y-1.5">
-                <span className="font-bold text-text-main block">Patient&apos;s Current Prescriptions:</span>
-                <div className="divide-y divide-border border border-border rounded-xl bg-white overflow-hidden">
-                  {unlockedPatient.profile.currentMedicines.map((m) => (
-                    <div key={m.id} className="p-3 flex flex-wrap items-center justify-between gap-2">
-                      <div>
-                        <strong className="text-text-main">{m.name}</strong> ({m.dose})
-                        <p className="text-[11px] text-text-muted">{m.frequency} • {m.instructions}</p>
-                      </div>
+              {/* DIGITAL PRESCRIPTION & MEDICATION ORDER (ISSUE VIA 6-DIGIT CODE) */}
+              <div className="rounded-xl border border-border bg-white p-4 space-y-3.5 shadow-sm">
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border pb-2.5">
+                  <div className="flex items-center gap-2">
+                    <div className="w-7 h-7 rounded-lg bg-surface border border-border flex items-center justify-center text-brand-primary">
+                      <Pill className="w-4 h-4" />
                     </div>
-                  ))}
+                    <div>
+                      <h4 className="font-bold text-xs text-text-main">
+                        Digital Prescription & Medication Order
+                      </h4>
+                      <p className="text-[11px] text-text-muted">
+                        Authorized clinician order for {unlockedPatient.profile.patientName}. Saved prescriptions immediately appear in the patient&apos;s portal under Prescription History.
+                      </p>
+                    </div>
+                  </div>
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-surface text-brand-primary border border-border font-semibold">
+                    Authorized via Code: {enteredConsentCode}
+                  </span>
+                </div>
+
+                {/* Minimal 2-field Prescription Form (Medication Name + Dosage Only) */}
+                <form onSubmit={handleIssuePrescription} className="space-y-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[11px] font-bold text-text-main mb-1">
+                        1. Medication or Injection Name
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={newRxMedName}
+                        onChange={(e) => {
+                          setNewRxMedName(e.target.value);
+                          setRxErrorMsg(null);
+                        }}
+                        placeholder="e.g. Atorvastatin Tablet / Ceftriaxone Injection / Paracetamol"
+                        className="w-full rounded-xl bg-surface/50 border border-border px-3 py-2 text-xs text-text-main focus:outline-none focus:border-brand-primary"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold text-text-main mb-1">
+                        2. Dosage
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={newRxDosage}
+                        onChange={(e) => {
+                          setNewRxDosage(e.target.value);
+                          setRxErrorMsg(null);
+                        }}
+                        placeholder="e.g. 20 mg once daily at bedtime / 1g IV stat"
+                        className="w-full rounded-xl bg-surface/50 border border-border px-3 py-2 text-xs text-text-main focus:outline-none focus:border-brand-primary"
+                      />
+                    </div>
+                  </div>
+
+                  {rxErrorMsg && (
+                    <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-red-800 text-xs font-semibold flex items-center gap-2 animate-fade-in">
+                      <AlertTriangle className="w-4 h-4 text-red-600 flex-shrink-0" />
+                      <span>{rxErrorMsg}</span>
+                    </div>
+                  )}
+
+                  {rxSuccessMsg && (
+                    <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold flex items-center gap-2 animate-fade-in">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                      <span>{rxSuccessMsg}</span>
+                    </div>
+                  )}
+
+                  <div className="flex items-center justify-end gap-2 pt-1">
+                    <button
+                      type="submit"
+                      className="px-4 py-2 rounded-xl bg-brand-primary hover:bg-brand-primary/90 text-white font-semibold text-xs flex items-center gap-1.5 shadow-sm transition-all"
+                    >
+                      <Check className="w-3.5 h-3.5" />
+                      <span>Save & Issue Prescription</span>
+                    </button>
+                  </div>
+                </form>
+
+                {/* Issued Prescriptions History List for this Patient */}
+                <div className="pt-2 border-t border-border/70 space-y-2">
+                  <div className="flex items-center justify-between text-[11px]">
+                    <span className="font-bold text-text-main">
+                      Prescription History for {unlockedPatient.profile.patientName}:
+                    </span>
+                    <span className="text-text-muted text-[10px]">
+                      {patientPrescriptions.length} Active Prescriptions
+                    </span>
+                  </div>
+
+                  <div className="divide-y divide-border border border-border rounded-xl bg-surface/30 overflow-hidden">
+                    {patientPrescriptions.length === 0 ? (
+                      <div className="p-4 text-center text-text-muted text-xs">
+                        No prescriptions issued yet for this patient.
+                      </div>
+                    ) : (
+                      patientPrescriptions.map((rx) => (
+                        <div key={rx.id} className="p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-white hover:bg-surface/50 transition-colors">
+                          <div className="space-y-0.5">
+                            <div className="flex items-center gap-2">
+                              <strong className="text-xs font-bold text-text-main">{rx.medicationName}</strong>
+                              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-surface text-brand-primary border border-border font-semibold">
+                                {rx.dosage}
+                              </span>
+                              <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                {rx.status}
+                              </span>
+                            </div>
+                            <p className="text-[11px] text-text-muted">
+                              Prescribed by: <strong className="text-text-main">{rx.prescribedBy}</strong> • {rx.prescribedDate} {rx.prescribedTime || ""}
+                            </p>
+                          </div>
+
+                          <div className="flex items-center gap-2 flex-shrink-0">
+                            <button
+                              type="button"
+                              onClick={() => handleDeletePrescription(rx.id)}
+                              className="p-1.5 rounded-lg text-text-muted hover:text-red-600 hover:bg-red-50 transition-colors"
+                              title="Delete prescription"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
                 </div>
               </div>
 

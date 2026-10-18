@@ -142,6 +142,14 @@ export default function DoctorConsultationPage() {
       return;
     }
 
+    // Sync to patient's digital prescription history
+    clinicalStore.addDigitalPrescription({
+      patientId: "RAMESH-54",
+      medicationName: rxMedicine,
+      dosage: rxDosage,
+      prescribedBy: "Dr. Rajesh Sharma (DM Cardiology, IIIT Delhi Hospital)",
+    });
+
     const rxMsg: ChatMessage = {
       id: `msg-rx-${Date.now()}`,
       sender: "Dr_Pulse_9482 (DM Cardiology)",

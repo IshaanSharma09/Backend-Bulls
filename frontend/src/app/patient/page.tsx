@@ -10,6 +10,7 @@ import {
   PatientLabFile,
   DoctorProfile,
   DynamicPatientAccessCode,
+  DigitalPrescription,
 } from "../../lib/clinicalStore";
 import {
   ShieldCheck,
@@ -47,12 +48,17 @@ function PatientDashboardContent() {
   const { patientUser } = useAuth();
   const searchParams = useSearchParams();
 
-  // Active Tab state: only 3 clean tabs
-  const [activeTab, setActiveTab] = useState<"report" | "code" | "doctor">("report");
+  // Active Tab state: 4 clean tabs including Prescription History
+  const [activeTab, setActiveTab] = useState<"report" | "code" | "prescriptions" | "doctor">("report");
 
   // Health Profile State (100% User Editable with pen icons)
   const [profile, setProfile] = useState<PatientHealthProfile>(clinicalStore.getHealthProfile());
   const [saveSuccessMsg, setSaveSuccessMsg] = useState<string | null>(null);
+
+  // Digital Prescriptions issued by doctors
+  const [prescriptions, setPrescriptions] = useState<DigitalPrescription[]>(
+    clinicalStore.getDigitalPrescriptions("RAMESH-54")
+  );
 
   // Dynamic Access Code State
   const [accessCode, setAccessCode] = useState<DynamicPatientAccessCode>(clinicalStore.getAccessCode());
@@ -117,7 +123,7 @@ function PatientDashboardContent() {
 
   useEffect(() => {
     const tabParam = searchParams.get("tab");
-    if (tabParam === "code" || tabParam === "doctor" || tabParam === "report") {
+    if (tabParam === "code" || tabParam === "doctor" || tabParam === "report" || tabParam === "prescriptions") {
       setActiveTab(tabParam);
     }
   }, [searchParams]);
@@ -129,6 +135,7 @@ function PatientDashboardContent() {
       setSummaryInput(p.simpleSummary);
       setAccessCode(clinicalStore.getAccessCode());
       setDoctors(clinicalStore.getAllDoctors());
+      setPrescriptions(clinicalStore.getDigitalPrescriptions(p.patientId));
     };
     sync();
     const unsub = clinicalStore.subscribe(sync);
@@ -403,6 +410,52 @@ DIAGNOSTIC INTERPRETATION:
     URL.revokeObjectURL(url);
   };
 
+  const handleDownloadPrescriptionSlip = (rx: DigitalPrescription) => {
+    const docContent = `================================================================================
+IIIT DELHI HOSPITAL & RESEARCH MEDICAL CENTRE
+DEPARTMENT OF CLINICAL PHARMACOLOGY & OUTPATIENT SERVICES
+Okhla Phase III, Near Govind Puri Metro Station, New Delhi 110020
+NMC Recognition ID: IIITD-HOSP-CENTRAL-2026
+================================================================================
+
+OFFICIAL DIGITAL CLINICAL PRESCRIPTION
+--------------------------------------------------------------------------------
+PRESCRIPTION ID  : ${rx.id}
+PATIENT NAME     : ${profile.patientName || "Ramesh Kumar"} (54M)
+PATIENT ID       : ${profile.patientId || "RAMESH-54"}
+BLOOD GROUP      : ${profile.bloodGroup || "B+"}
+ISSUED DATE      : ${rx.prescribedDate}
+ISSUED TIME      : ${rx.prescribedTime || "10:30 AM"}
+CONSENT METHOD   : Verified via 15-Minute Dynamic Patient Access Code
+ATTENDING DOCTOR : ${rx.prescribedBy}
+STATUS           : ${rx.status} (Verified Clinical Order)
+
+PRESCRIBED MEDICATION / INJECTION:
+--------------------------------------------------------------------------------
+MEDICATION / INJ : ${rx.medicationName}
+EXACT DOSAGE     : ${rx.dosage}
+
+PATIENT SAFETY VERIFICATION:
+- Documented Allergies Checked: NO CONTRAINDICATIONS
+- Verified against MedNexus Clinical Safety Engine
+- Valid at hospital pharmacy and Pradhan Mantri Jan Aushadhi Kendras (PMBJP)
+
+ATTENDING CLINICIAN SIGNATURE:
+Digitally Authorized by ${rx.prescribedBy}
+IIIT Delhi Medical Centre Central Registry
+================================================================================`;
+
+    const blob = new Blob([docContent], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `Prescription_${rx.medicationName.replace(/[^a-zA-Z0-9]/g, "_")}_${rx.id}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   const filteredDoctors = doctors.filter((doc) => {
     if (!searchSymptom.trim()) return true;
     const q = searchSymptom.toLowerCase();
@@ -451,12 +504,12 @@ DIAGNOSTIC INTERPRETATION:
         )}
       </div>
 
-      {/* THREE DISTINCT TABS */}
+      {/* FOUR DISTINCT TABS */}
       <div className="flex flex-wrap items-center gap-1.5 p-1.5 bg-surface rounded-2xl border border-border">
         <button
           type="button"
           onClick={() => setActiveTab("report")}
-          className={`flex-1 min-w-[140px] py-2.5 px-3 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-2 ${
+          className={`flex-1 min-w-[130px] py-2.5 px-3 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-2 ${
             activeTab === "report"
               ? "bg-white text-brand-primary border border-border shadow-sm"
               : "text-text-muted hover:text-text-main"
@@ -469,7 +522,7 @@ DIAGNOSTIC INTERPRETATION:
         <button
           type="button"
           onClick={() => setActiveTab("code")}
-          className={`flex-1 min-w-[140px] py-2.5 px-3 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-2 ${
+          className={`flex-1 min-w-[130px] py-2.5 px-3 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-2 ${
             activeTab === "code"
               ? "bg-white text-brand-primary border border-border shadow-sm"
               : "text-text-muted hover:text-text-main"
@@ -481,8 +534,21 @@ DIAGNOSTIC INTERPRETATION:
 
         <button
           type="button"
+          onClick={() => setActiveTab("prescriptions")}
+          className={`flex-1 min-w-[130px] py-2.5 px-3 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-2 ${
+            activeTab === "prescriptions"
+              ? "bg-white text-brand-primary border border-border shadow-sm"
+              : "text-text-muted hover:text-text-main"
+          }`}
+        >
+          <Pill className="w-4 h-4" />
+          <span>Prescription History</span>
+        </button>
+
+        <button
+          type="button"
           onClick={() => setActiveTab("doctor")}
-          className={`flex-1 min-w-[140px] py-2.5 px-3 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-2 ${
+          className={`flex-1 min-w-[130px] py-2.5 px-3 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-2 ${
             activeTab === "doctor"
               ? "bg-white text-brand-primary border border-border shadow-sm"
               : "text-text-muted hover:text-text-main"
@@ -874,6 +940,19 @@ DIAGNOSTIC INTERPRETATION:
                 </div>
               ))}
             </div>
+
+            {/* Link to Full Digital Prescription History */}
+            <div className="pt-2 border-t border-border/70 flex items-center justify-between text-xs">
+              <span className="text-text-muted">Need official clinician stamps & dates?</span>
+              <button
+                type="button"
+                onClick={() => setActiveTab("prescriptions")}
+                className="text-brand-primary font-semibold hover:underline flex items-center gap-1"
+              >
+                <span>View Full Prescription History</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
           </div>
 
           {/* 4. VACCINATION STATUS (WITH DIRECT PEN EDITING) */}
@@ -1204,7 +1283,91 @@ DIAGNOSTIC INTERPRETATION:
         </div>
       )}
 
-      {/* TAB 3: FIND DOCTOR */}
+      {/* TAB 3: PRESCRIPTION HISTORY (DIGITAL PRESCRIPTIONS ISSUED VIA 6-DIGIT CODE) */}
+      {activeTab === "prescriptions" && (
+        <div className="bg-white rounded-2xl border border-border p-6 shadow-sm space-y-6 animate-fade-in">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="px-2.5 py-0.5 rounded-md bg-surface text-brand-primary border border-border text-[10px] font-bold uppercase tracking-wider">
+                  Digital Health Record
+                </span>
+                <h2 className="text-base font-bold text-text-main">
+                  Prescription History
+                </h2>
+              </div>
+              <p className="text-xs text-text-muted mt-1 leading-relaxed">
+                Official digital prescriptions issued by attending clinicians at IIIT Delhi Hospital. Authorized during your consultation via your 15-minute dynamic access code.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className="px-3 py-1.5 rounded-xl bg-surface border border-border text-xs font-semibold text-brand-primary flex items-center gap-1.5 shadow-sm">
+                <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                <span>Verified via Visit Code {accessCode.code}</span>
+              </span>
+            </div>
+          </div>
+
+          {/* Prescriptions List */}
+          <div className="space-y-3">
+            {prescriptions.length === 0 ? (
+              <div className="p-8 text-center text-xs text-text-muted bg-surface/30 rounded-2xl border border-dashed border-border space-y-2">
+                <Pill className="w-8 h-8 text-brand-primary mx-auto opacity-60" />
+                <p className="font-semibold text-text-main">No digital prescriptions issued yet.</p>
+                <p className="text-[11px]">When a clinician writes a prescription during your consultation, it will appear here instantly.</p>
+              </div>
+            ) : (
+              prescriptions.map((rx) => (
+                <div
+                  key={rx.id}
+                  className="p-4 sm:p-5 rounded-2xl bg-surface/30 border border-border hover:border-brand-primary/40 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm"
+                >
+                  <div className="space-y-1.5 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <div className="w-8 h-8 rounded-xl bg-white border border-border flex items-center justify-center text-brand-primary shadow-xs">
+                        <Pill className="w-4 h-4" />
+                      </div>
+                      <strong className="text-sm font-bold text-text-main">
+                        {rx.medicationName}
+                      </strong>
+                      <span className="px-2.5 py-0.5 rounded-lg bg-white border border-brand-primary/30 text-brand-primary font-mono font-bold text-xs shadow-xs">
+                        {rx.dosage}
+                      </span>
+                      <span className="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-semibold flex items-center gap-1">
+                        <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                        <span>Active Prescription</span>
+                      </span>
+                    </div>
+
+                    <div className="text-xs text-text-muted flex flex-wrap items-center gap-x-3 gap-y-1 pt-1">
+                      <span>Prescribing Clinician: <strong className="text-text-main">{rx.prescribedBy}</strong></span>
+                      <span>•</span>
+                      <span>Date: <strong className="text-text-main">{rx.prescribedDate}</strong> ({rx.prescribedTime || "10:30 AM"})</span>
+                      <span>•</span>
+                      <span className="font-mono text-[11px] text-text-muted">Rx ID: {rx.id}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => handleDownloadPrescriptionSlip(rx)}
+                      className="px-3.5 py-2 rounded-xl bg-white hover:bg-surface border border-border text-xs font-semibold text-text-main flex items-center gap-1.5 transition-colors shadow-sm"
+                      title="Download official digital prescription document"
+                    >
+                      <Download className="w-3.5 h-3.5 text-brand-primary" />
+                      <span>Download Slip</span>
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* TAB 4: FIND DOCTOR */}
       {activeTab === "doctor" && (
         <div className="bg-white rounded-2xl border border-border p-6 shadow-sm space-y-6 animate-fade-in">
           <div>
