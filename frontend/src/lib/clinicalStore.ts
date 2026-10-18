@@ -71,6 +71,9 @@ export interface PatientLabFile {
   fileSize: string;
   notes: string;
   fileUrl?: string;
+  isPhiScrubbed?: boolean;
+  redactedEntities?: string[];
+  scrubbedSummary?: string;
 }
 
 export interface PatientHealthProfile {
@@ -154,15 +157,35 @@ export interface PrescriptionInput {
   janAushadhiPrice?: number;
 }
 
+export interface PrescriptionAuditEntry {
+  id: string;
+  version?: number;
+  editedAt: string;
+  timestamp?: string;
+  editedBy: string;
+  medicationName?: string;
+  dosage?: string;
+  instructions?: string;
+  previousMedicationName: string;
+  previousDosage: string;
+  previousInstructions?: string;
+  reasonForChange: string;
+}
+
 export interface DigitalPrescription {
   id: string;
   patientId: string;
   medicationName: string;
   dosage: string;
+  instructions?: string;
   prescribedBy: string;
   prescribedDate: string;
   prescribedTime: string;
   status: "Active" | "Completed" | "Discontinued";
+  version: number;
+  lastUpdated?: string;
+  lastUpdatedBy?: string;
+  auditHistory: PrescriptionAuditEntry[];
 }
 
 export interface DoctorProfile {
@@ -229,30 +252,56 @@ const INITIAL_DIGITAL_PRESCRIPTIONS: DigitalPrescription[] = [
     patientId: "RAMESH-54",
     medicationName: "Aspirin Chewable",
     dosage: "75 mg once daily after breakfast",
+    instructions: "Chew thoroughly after breakfast with a full glass of water",
     prescribedBy: "Dr. Rajesh Sharma (Chief Medical Officer & Cardiology, IIIT Delhi Hospital)",
     prescribedDate: "17 Oct 2026",
     prescribedTime: "10:30 AM",
     status: "Active",
+    version: 2,
+    lastUpdated: "18 Oct 2026, 08:30 AM",
+    lastUpdatedBy: "Dr. Rajesh Sharma (DM Cardiology)",
+    auditHistory: [
+      {
+        id: "audit-1",
+        version: 1,
+        editedAt: "18 Oct 2026, 08:30 AM",
+        timestamp: "18 Oct 2026, 08:30 AM",
+        editedBy: "Dr. Rajesh Sharma (DM Cardiology)",
+        medicationName: "Aspirin Dispersible",
+        dosage: "150 mg once daily",
+        instructions: "Dissolve in half glass of water",
+        previousMedicationName: "Aspirin Dispersible",
+        previousDosage: "150 mg once daily",
+        previousInstructions: "Dissolve in half glass of water",
+        reasonForChange: "Down-titrated to 75 mg maintenance dose post-stable ECG review",
+      },
+    ],
   },
   {
     id: "rx-102",
     patientId: "RAMESH-54",
     medicationName: "Atorvastatin Tablet",
     dosage: "20 mg once daily at bedtime",
+    instructions: "Take every night before sleeping for lipid control",
     prescribedBy: "Dr. Rajesh Sharma (Chief Medical Officer & Cardiology, IIIT Delhi Hospital)",
     prescribedDate: "15 Oct 2026",
     prescribedTime: "11:15 AM",
     status: "Active",
+    version: 1,
+    auditHistory: [],
   },
   {
     id: "rx-103",
     patientId: "RAMESH-54",
     medicationName: "Metoprolol Succinate",
     dosage: "25 mg once daily in the morning",
+    instructions: "Maintains smooth resting heart rate",
     prescribedBy: "Dr. Neha Kapoor (Internal Medicine & Diagnostics, IIIT Delhi Hospital)",
     prescribedDate: "12 Oct 2026",
     prescribedTime: "04:45 PM",
     status: "Active",
+    version: 1,
+    auditHistory: [],
   },
 ];
 
@@ -1113,10 +1162,13 @@ class ClinicalStore {
       patientId: data.patientId || "RAMESH-54",
       medicationName: data.medicationName.trim(),
       dosage: data.dosage.trim(),
+      instructions: "As directed by attending physician",
       prescribedBy: data.prescribedBy || "Dr. Rajesh Sharma",
       prescribedDate: new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }),
       prescribedTime: new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }),
       status: "Active",
+      version: 1,
+      auditHistory: [],
     };
 
     this.digitalPrescriptions.unshift(newRx);
@@ -1132,6 +1184,103 @@ class ClinicalStore {
 
     this.persist();
     return { success: true, prescription: newRx };
+  }
+
+  public updateDigitalPrescription(
+    id: string,
+    updates: {
+      medicationName: string;
+      dosage: string;
+      instructions?: string;
+      reasonForChange: string;
+      editedBy: string;
+    }
+  ): { success: boolean; prescription?: DigitalPrescription; error?: string } {
+    const rxIndex = this.digitalPrescriptions.findIndex((p) => p.id === id);
+    if (rxIndex === -1) {
+      return { success: false, error: "Prescription record not found." };
+    }
+
+    const currentRx = this.digitalPrescriptions[rxIndex];
+
+    if (!updates.medicationName || !updates.medicationName.trim()) {
+      return { success: false, error: "Medication or injection name is required." };
+    }
+    if (!updates.dosage || !updates.dosage.trim()) {
+      return { success: false, error: "Dosage is required." };
+    }
+
+    // Safety Allergy Check against patient's allergies
+    const medLower = updates.medicationName.toLowerCase();
+    const allergens = this.healthProfile.allergies.map((a) => a.toLowerCase());
+    const isContraindicated = allergens.some((allergy) => {
+      if (
+        allergy.includes("penicillin") &&
+        (medLower.includes("penicillin") || medLower.includes("amoxicillin") || medLower.includes("ampicillin") || medLower.includes("augmentin"))
+      ) {
+        return true;
+      }
+      if (
+        (allergy.includes("ibuprofen") || allergy.includes("nsaid")) &&
+        (medLower.includes("ibuprofen") ||
+          medLower.includes("brufen") ||
+          medLower.includes("combiflam") ||
+          medLower.includes("diclofenac") ||
+          medLower.includes("naproxen"))
+      ) {
+        return true;
+      }
+      return false;
+    });
+
+    if (isContraindicated) {
+      return {
+        success: false,
+        error: `SAFETY ALERT: ${updates.medicationName} is contraindicated against the patient's documented allergies. Revision blocked.`,
+      };
+    }
+
+    const auditEntry: PrescriptionAuditEntry = {
+      id: `audit-${Date.now()}`,
+      version: currentRx.version || 1,
+      editedAt: `${new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}, ${new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}`,
+      timestamp: `${new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}, ${new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}`,
+      editedBy: updates.editedBy || "Dr. Rajesh Sharma",
+      medicationName: currentRx.medicationName,
+      dosage: currentRx.dosage,
+      instructions: currentRx.instructions,
+      previousMedicationName: currentRx.medicationName,
+      previousDosage: currentRx.dosage,
+      previousInstructions: currentRx.instructions,
+      reasonForChange: updates.reasonForChange.trim() || "Clinician adjustment during consultation",
+    };
+
+    const updatedRx: DigitalPrescription = {
+      ...currentRx,
+      medicationName: updates.medicationName.trim(),
+      dosage: updates.dosage.trim(),
+      instructions: updates.instructions?.trim() || currentRx.instructions,
+      version: (currentRx.version || 1) + 1,
+      lastUpdated: auditEntry.editedAt,
+      lastUpdatedBy: auditEntry.editedBy,
+      auditHistory: [auditEntry, ...(currentRx.auditHistory || [])],
+    };
+
+    this.digitalPrescriptions[rxIndex] = updatedRx;
+
+    // Sync into currentMedicines in patient's profile
+    const medIdx = this.healthProfile.currentMedicines.findIndex((m) => m.id === id);
+    if (medIdx !== -1) {
+      this.healthProfile.currentMedicines[medIdx] = {
+        ...this.healthProfile.currentMedicines[medIdx],
+        name: updatedRx.medicationName,
+        dose: updatedRx.dosage,
+        instructions: updatedRx.instructions || `Updated by ${auditEntry.editedBy}`,
+      };
+    }
+
+    this.persist();
+    return { success: true, prescription: updatedRx };
   }
 
   public deleteDigitalPrescription(id: string): boolean {
