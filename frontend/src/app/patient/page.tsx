@@ -26,7 +26,6 @@ import {
   Calendar,
   ArrowRight,
   User,
-  Star,
   Lock,
   Upload,
   Plus,
@@ -35,7 +34,6 @@ import {
   Save,
   X,
   FileCheck,
-  Activity,
   Dna,
   Syringe,
   Check,
@@ -75,9 +73,6 @@ function PatientDashboardContent() {
   const [locationSort, setLocationSort] = useState<"none" | "nearest" | "alpha">("none");
 
   // Pen Edit States for Direct Typing
-  const [editingSummary, setEditingSummary] = useState(false);
-  const [summaryInput, setSummaryInput] = useState("");
-
   const [editingAllergyIndex, setEditingAllergyIndex] = useState<number | null>(null);
   const [allergyInput, setAllergyInput] = useState("");
   const [newAllergy, setNewAllergy] = useState("");
@@ -153,7 +148,6 @@ function PatientDashboardContent() {
     const sync = () => {
       const p = clinicalStore.getHealthProfile();
       setProfile(p);
-      setSummaryInput(p.simpleSummary);
       setAccessCode(clinicalStore.getAccessCode());
       setDoctors(clinicalStore.getAllDoctors());
       setPrescriptions(clinicalStore.getDigitalPrescriptions(p.patientId));
@@ -179,14 +173,6 @@ function PatientDashboardContent() {
     navigator.clipboard.writeText(accessCode.code);
     setCodeCopied(true);
     setTimeout(() => setCodeCopied(false), 3000);
-  };
-
-  // --- Overall Status Handlers ---
-  const handleSaveSummary = () => {
-    if (!summaryInput.trim()) return;
-    clinicalStore.updateHealthProfile({ simpleSummary: summaryInput.trim() });
-    setEditingSummary(false);
-    showNotification("Health summary updated.");
   };
 
   // --- Allergy Pen Handlers ---
@@ -719,63 +705,6 @@ IIIT Delhi Medical Centre Central Registry
       {/* TAB 1: HEALTH PROFILE & FILES (CRISP, MINIMAL, ZERO JARGON, DIRECT PEN EDITING) */}
       {activeTab === "report" && (
         <div className="space-y-6 animate-fade-in">
-          {/* Quick Status Bar with Pen Edit */}
-          <div className="bg-white rounded-2xl border border-border p-4 shadow-sm flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center gap-3 flex-1 min-w-[280px]">
-              <div className="w-8 h-8 rounded-lg bg-surface border border-border flex items-center justify-center text-brand-primary flex-shrink-0">
-                <Activity className="w-4 h-4" />
-              </div>
-              <div className="flex-1">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-text-muted">
-                  Overall Health Status
-                </span>
-                {editingSummary ? (
-                  <div className="flex items-center gap-2 mt-1">
-                    <input
-                      type="text"
-                      value={summaryInput}
-                      onChange={(e) => setSummaryInput(e.target.value)}
-                      className="flex-1 p-1.5 rounded-lg border border-brand-primary bg-white text-xs text-text-main focus:outline-none"
-                    />
-                    <button
-                      type="button"
-                      onClick={handleSaveSummary}
-                      className="p-1.5 rounded-lg bg-brand-primary text-white"
-                      title="Save"
-                    >
-                      <Check className="w-3.5 h-3.5" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setEditingSummary(false)}
-                      className="p-1.5 rounded-lg bg-surface text-text-muted"
-                      title="Cancel"
-                    >
-                      <X className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-2 mt-0.5">
-                    <p className="text-xs font-medium text-text-main">
-                      {profile.simpleSummary}
-                    </p>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setSummaryInput(profile.simpleSummary);
-                        setEditingSummary(true);
-                      }}
-                      className="p-1 rounded text-text-muted hover:text-brand-primary hover:bg-surface"
-                      title="Edit status"
-                    >
-                      <Edit3 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-
           {/* 1. ALLERGIES & SENSITIVITIES (WITH DIRECT PEN EDITING) */}
           <div className="bg-white rounded-2xl border border-border p-5 sm:p-6 shadow-sm space-y-4">
             <div className="flex items-center justify-between border-b border-border pb-3">
@@ -1745,29 +1674,12 @@ IIIT Delhi Medical Centre Central Registry
                       </div>
                     </div>
 
-                    {/* Location & Distance Row */}
-                    <div className="flex items-center gap-1.5 text-xs text-text-muted bg-white/80 p-2 rounded-xl border border-border/60">
-                      <MapPin className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" />
-                      <span className="truncate">{doc.location}</span>
-                      <span className="text-emerald-700 font-semibold font-mono text-[11px] flex-shrink-0">
-                        ({doc.distanceKm} km)
-                      </span>
-                    </div>
-
                     <p className="text-[11px] text-text-muted leading-relaxed line-clamp-2">
                       {doc.bio}
                     </p>
                   </div>
 
-                  <div className="pt-2 border-t border-border flex items-center justify-between text-xs">
-                    <div className="flex items-center gap-1 text-amber-600 font-semibold text-[11px]">
-                      <Star className="w-3.5 h-3.5 fill-current" />
-                      <span>{doc.rating} ({doc.reviewCount})</span>
-                      <span className="text-text-muted ml-1 text-[10px]">
-                        • {doc.peerUpvotes} upvotes
-                      </span>
-                    </div>
-
+                  <div className="pt-2 border-t border-border flex items-center justify-end text-xs">
                     <span className="text-[11px] text-brand-primary font-semibold">
                       {doc.availableNext}
                     </span>
