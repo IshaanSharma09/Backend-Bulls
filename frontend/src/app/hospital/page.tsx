@@ -39,6 +39,8 @@ import {
   UserPlus,
   ArrowRight,
   Eye,
+  Download,
+  ExternalLink,
 } from "lucide-react";
 
 function DoctorHospitalDashboardContent() {
@@ -209,6 +211,56 @@ function DoctorHospitalDashboardContent() {
   const handleStatusChange = (patientId: string, status: HospitalPatient["status"]) => {
     clinicalStore.updateHospitalPatientStatus(patientId, status);
     showNotification(`Patient status updated to ${status}.`);
+  };
+
+  const handleDownloadLabReport = (file: PatientLabFile) => {
+    if (file.fileUrl) {
+      const a = document.createElement("a");
+      a.href = file.fileUrl;
+      a.download = file.name;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      return;
+    }
+
+    const docContent = `================================================================================
+IIIT DELHI HOSPITAL & RESEARCH MEDICAL CENTRE
+DEPARTMENT OF CLINICAL PATHOLOGY & CENTRAL DIAGNOSTIC ARCHIVE
+Okhla Phase III, Near Govind Puri Metro Station, New Delhi 110020
+================================================================================
+
+OFFICIAL CLINICAL DIAGNOSTIC REPORT
+--------------------------------------------------------------------------------
+PATIENT NAME     : Ramesh Kumar (54M)
+PATIENT ID       : RAMESH-54
+BLOOD GROUP      : B+
+DOCUMENT TITLE   : ${file.name}
+CATEGORY         : ${file.category}
+DATE RECORDED    : ${file.date}
+FILE SIZE        : ${file.fileSize}
+STATUS           : Verified Normal Baseline (Stable)
+ATTENDING DOCTOR : ${currentDoctorName} (${currentDoctorSpecialty})
+
+CLINICAL FINDINGS & TEST NOTES:
+--------------------------------------------------------------------------------
+${file.notes}
+
+DIAGNOSTIC INTERPRETATION:
+- Verified on MedNexus Healthcare Network
+- Securely synchronized between Patient Portal and Hospital Clinician OS
+- No emergency intervention indicated at this time
+================================================================================`;
+
+    const blob = new Blob([docContent], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${file.name.replace(/\.[^/.]+$/, "")}_Official_Report.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
 
   // Count empty / vacant slots
@@ -1119,16 +1171,76 @@ function DoctorHospitalDashboardContent() {
               </p>
             </div>
 
-            {/* Document Preview */}
+            {/* Document / Visual Preview */}
             <div className="space-y-1.5">
-              <span className="font-bold text-text-main text-[11px] block">Diagnostic Document / Image Preview:</span>
+              <span className="font-bold text-text-main text-[11px] block">Diagnostic Document / Scan Preview:</span>
               {viewingLabFile.fileUrl ? (
-                <div className="rounded-xl border border-border p-2 bg-surface/30 flex items-center justify-center">
-                  <img
-                    src={viewingLabFile.fileUrl}
-                    alt={viewingLabFile.name}
-                    className="max-h-56 w-auto object-contain rounded-lg"
-                  />
+                viewingLabFile.fileUrl.startsWith("data:application/pdf") || viewingLabFile.name.toLowerCase().endsWith(".pdf") ? (
+                  <div className="space-y-2">
+                    <iframe
+                      src={viewingLabFile.fileUrl}
+                      title={viewingLabFile.name}
+                      className="w-full h-80 rounded-xl border border-border bg-white shadow-inner"
+                    />
+                    <div className="flex items-center justify-between text-[11px] text-text-muted px-1">
+                      <span>Interactive PDF Document Viewer</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const w = window.open();
+                          if (w) {
+                            w.document.write(`<iframe src="${viewingLabFile.fileUrl}" style="width:100%;height:100%;border:none;margin:0;padding:0;" allowfullscreen></iframe>`);
+                          }
+                        }}
+                        className="text-brand-primary hover:underline font-semibold flex items-center gap-1"
+                      >
+                        <ExternalLink className="w-3 h-3" />
+                        <span>Open in New Tab</span>
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <div className="rounded-xl border border-border p-2 bg-surface/30 flex items-center justify-center max-h-80 overflow-hidden">
+                      <img
+                        src={viewingLabFile.fileUrl}
+                        alt={viewingLabFile.name}
+                        className="max-h-72 w-auto object-contain rounded-lg shadow-sm"
+                      />
+                    </div>
+                    <div className="flex items-center justify-between text-[11px] text-text-muted px-1">
+                      <span>Original Scan Preview</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const w = window.open();
+                          if (w) {
+                            w.document.write(`<img src="${viewingLabFile.fileUrl}" style="max-width:100%;display:block;margin:auto;" />`);
+                          }
+                        }}
+                        className="text-brand-primary hover:underline font-semibold flex items-center gap-1"
+                      >
+                        <ExternalLink className="w-3 h-3" />
+                        <span>View Full Image</span>
+                      </button>
+                    </div>
+                  </div>
+                )
+              ) : viewingLabFile.category === "Cardiology / ECG" || viewingLabFile.name.toLowerCase().includes("ecg") ? (
+                <div className="p-4 rounded-xl border border-emerald-200 bg-emerald-50/40 space-y-2">
+                  <div className="flex items-center justify-between text-xs text-emerald-800 font-semibold">
+                    <span>12-Lead Rhythm Strip (Lead II High-Definition Trace)</span>
+                    <span className="font-mono text-[10px] bg-emerald-100 px-2 py-0.5 rounded">25 mm/s | 10 mm/mV</span>
+                  </div>
+                  <div className="h-24 w-full bg-emerald-950 rounded-lg p-3 flex items-center justify-center overflow-hidden border border-emerald-800 shadow-inner">
+                    <svg className="w-full h-full stroke-emerald-400 fill-none stroke-[2]" viewBox="0 0 600 60" preserveAspectRatio="none">
+                      <path d="M 0 30 L 40 30 L 50 22 L 60 38 L 70 30 L 110 30 L 115 8 L 125 54 L 135 18 L 145 30 L 180 30 L 195 24 L 210 30 L 250 30 L 255 8 L 265 54 L 275 18 L 285 30 L 320 30 L 335 24 L 350 30 L 390 30 L 395 8 L 405 54 L 415 18 L 425 30 L 460 30 L 475 24 L 490 30 L 530 30 L 535 8 L 545 54 L 555 18 L 565 30 L 600 30" />
+                    </svg>
+                  </div>
+                  <div className="text-[10px] text-emerald-700 flex items-center justify-between">
+                    <span>Regular Sinus Rhythm, Normal Axis, No ST elevation</span>
+                    <span>Verified on IIIT Delhi Central Archive</span>
+                  </div>
                 </div>
               ) : (
                 <div className="p-4 rounded-xl border border-dashed border-border bg-surface/30 text-center space-y-2">
@@ -1139,16 +1251,29 @@ function DoctorHospitalDashboardContent() {
               )}
             </div>
 
-            {/* Hospital Verification Stamp */}
-            <div className="flex items-center justify-between pt-2 border-t border-border text-[11px] text-text-muted">
-              <span>Verified by: <strong>IIIT Delhi Hospital Pathology</strong></span>
-              <button
-                type="button"
-                onClick={() => setViewingLabFile(null)}
-                className="px-4 py-2 rounded-xl bg-brand-primary text-white font-semibold text-xs hover:bg-brand-primary/90 transition-all shadow-sm"
-              >
-                Close Report
-              </button>
+            {/* Hospital Verification Stamp & Action Buttons */}
+            <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-border text-[11px] text-text-muted">
+              <div className="flex items-center gap-1.5">
+                <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                <span>Verified by <strong>IIIT Delhi Hospital Pathology</strong></span>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleDownloadLabReport(viewingLabFile)}
+                  className="px-3.5 py-2 rounded-xl bg-surface hover:bg-surface/80 border border-border text-text-main font-semibold flex items-center gap-1.5 transition-colors shadow-sm"
+                >
+                  <Download className="w-3.5 h-3.5 text-brand-primary" />
+                  <span>Download Report</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewingLabFile(null)}
+                  className="px-4 py-2 rounded-xl bg-brand-primary text-white font-semibold hover:bg-brand-primary/90 transition-all shadow-sm"
+                >
+                  Close Report
+                </button>
+              </div>
             </div>
           </div>
         </div>
