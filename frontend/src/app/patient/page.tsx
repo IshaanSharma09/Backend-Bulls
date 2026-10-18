@@ -42,6 +42,9 @@ import {
   Eye,
   Download,
   ExternalLink,
+  MapPin,
+  ArrowUpDown,
+  IndianRupee,
 } from "lucide-react";
 
 function PatientDashboardContent() {
@@ -68,6 +71,8 @@ function PatientDashboardContent() {
   // Doctors & Search State
   const [doctors, setDoctors] = useState<DoctorProfile[]>([]);
   const [searchSymptom, setSearchSymptom] = useState("");
+  const [priceSort, setPriceSort] = useState<"none" | "asc" | "desc">("none");
+  const [locationSort, setLocationSort] = useState<"none" | "nearest" | "alpha">("none");
 
   // Pen Edit States for Direct Typing
   const [editingSummary, setEditingSummary] = useState(false);
@@ -580,15 +585,43 @@ IIIT Delhi Medical Centre Central Registry
     URL.revokeObjectURL(url);
   };
 
-  const filteredDoctors = doctors.filter((doc) => {
-    if (!searchSymptom.trim()) return true;
-    const q = searchSymptom.toLowerCase();
-    return (
-      doc.specialty.toLowerCase().includes(q) ||
-      doc.name.toLowerCase().includes(q) ||
-      doc.matchedSymptoms.some((s) => s.includes(q))
-    );
-  });
+  const handleTogglePriceSort = () => {
+    setLocationSort("none");
+    setPriceSort((prev) => (prev === "none" ? "asc" : prev === "asc" ? "desc" : "none"));
+  };
+
+  const handleToggleLocationSort = () => {
+    setPriceSort("none");
+    setLocationSort((prev) => (prev === "none" ? "nearest" : prev === "nearest" ? "alpha" : "none"));
+  };
+
+  const filteredDoctors = [...doctors]
+    .filter((doc) => {
+      if (!searchSymptom.trim()) return true;
+      const q = searchSymptom.toLowerCase();
+      return (
+        doc.specialty.toLowerCase().includes(q) ||
+        doc.name.toLowerCase().includes(q) ||
+        (doc.location && doc.location.toLowerCase().includes(q)) ||
+        doc.hospitalName.toLowerCase().includes(q) ||
+        doc.matchedSymptoms.some((s) => s.includes(q))
+      );
+    })
+    .sort((a, b) => {
+      if (priceSort === "asc") {
+        return a.consultationFee - b.consultationFee;
+      }
+      if (priceSort === "desc") {
+        return b.consultationFee - a.consultationFee;
+      }
+      if (locationSort === "nearest") {
+        return (a.distanceKm || 99) - (b.distanceKm || 99);
+      }
+      if (locationSort === "alpha") {
+        return (a.location || "").localeCompare(b.location || "");
+      }
+      return 0;
+    });
 
   return (
     <div className="space-y-6 pb-16 animate-fade-in max-w-4xl mx-auto">
@@ -1535,64 +1568,214 @@ IIIT Delhi Medical Centre Central Registry
       {/* TAB 4: FIND DOCTOR */}
       {activeTab === "doctor" && (
         <div className="bg-white rounded-2xl border border-border p-6 shadow-sm space-y-6 animate-fade-in">
-          <div>
-            <h2 className="text-base font-bold text-text-main">
-              Find Verified Doctors (IIIT Delhi Hospital)
-            </h2>
-            <p className="text-xs text-text-muted mt-1 leading-relaxed">
-              Search by symptoms, medical specialty, or compare consultation fees.
-            </p>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h2 className="text-base font-bold text-text-main">
+                Find Verified Doctors (IIIT Delhi Network)
+              </h2>
+              <p className="text-xs text-text-muted mt-1 leading-relaxed">
+                Search by symptoms, specialty, or clinic proximity. Sort by consultation fees and nearby locations.
+              </p>
+            </div>
+            <div className="text-xs text-text-muted font-medium">
+              Showing <strong className="text-text-main">{filteredDoctors.length}</strong> verified doctors
+            </div>
           </div>
 
-          {/* Search Bar */}
-          <div className="relative">
-            <Search className="w-4 h-4 text-text-muted absolute left-3.5 top-1/2 -translate-y-1/2" />
-            <input
-              type="text"
-              placeholder="Search by symptom (e.g., chest discomfort, fever, headache, allergy) or specialty..."
-              value={searchSymptom}
-              onChange={(e) => setSearchSymptom(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-surface/50 border border-border text-xs text-text-main focus:outline-none focus:border-brand-primary"
-            />
-          </div>
+          {/* Search & Sort Controls Bar */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+            {/* Search Input */}
+            <div className="relative flex-1">
+              <Search className="w-4 h-4 text-text-muted absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                placeholder="Search by symptom (e.g. chest discomfort, fever, diabetes), specialty, or location..."
+                value={searchSymptom}
+                onChange={(e) => setSearchSymptom(e.target.value)}
+                className="w-full pl-10 pr-9 py-2.5 rounded-xl bg-surface/50 border border-border text-xs text-text-main focus:outline-hidden focus:border-brand-primary"
+              />
+              {searchSymptom && (
+                <button
+                  type="button"
+                  onClick={() => setSearchSymptom("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-main"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
 
-          {/* Doctor Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {filteredDoctors.map((doc) => (
-              <div
-                key={doc.id}
-                className="p-4 rounded-xl bg-surface/30 border border-border hover:border-brand-primary/50 transition-all flex flex-col justify-between space-y-3"
+            {/* Sort by Price & Location Buttons */}
+            <div className="flex items-center gap-2 flex-shrink-0">
+              {/* Sort by Price */}
+              <button
+                type="button"
+                onClick={handleTogglePriceSort}
+                className={`px-3 py-2.5 rounded-xl border text-xs font-semibold flex items-center gap-1.5 transition-all shadow-xs ${
+                  priceSort !== "none"
+                    ? "bg-brand-primary text-white border-brand-primary"
+                    : "bg-surface/60 hover:bg-surface border-border text-text-main"
+                }`}
+                title="Sort doctors by consultation price"
               >
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-surface text-brand-primary border border-border">
-                      {doc.hospitalName}
-                    </span>
-                    <span className="text-xs font-bold text-brand-primary">
-                      INR {doc.consultationFee}
-                    </span>
-                  </div>
+                <IndianRupee className="w-3.5 h-3.5" />
+                <span>
+                  {priceSort === "asc"
+                    ? "Price: Low to High"
+                    : priceSort === "desc"
+                    ? "Price: High to Low"
+                    : "Sort Price"}
+                </span>
+                <ArrowUpDown className="w-3 h-3 opacity-70" />
+              </button>
 
-                  <h3 className="text-sm font-bold text-text-main">{doc.name}</h3>
-                  <div className="text-xs font-semibold text-text-muted">{doc.specialty}</div>
-                  <p className="text-[11px] text-text-muted leading-relaxed line-clamp-2">
-                    {doc.bio}
-                  </p>
-                </div>
+              {/* Sort by Location */}
+              <button
+                type="button"
+                onClick={handleToggleLocationSort}
+                className={`px-3 py-2.5 rounded-xl border text-xs font-semibold flex items-center gap-1.5 transition-all shadow-xs ${
+                  locationSort !== "none"
+                    ? "bg-brand-primary text-white border-brand-primary"
+                    : "bg-surface/60 hover:bg-surface border-border text-text-main"
+                }`}
+                title="Sort doctors by location and distance proximity"
+              >
+                <MapPin className="w-3.5 h-3.5" />
+                <span>
+                  {locationSort === "nearest"
+                    ? "Nearest (Distance)"
+                    : locationSort === "alpha"
+                    ? "Location (A-Z)"
+                    : "Sort Location"}
+                </span>
+                <ArrowUpDown className="w-3 h-3 opacity-70" />
+              </button>
 
-                <div className="pt-2 border-t border-border flex items-center justify-between text-xs">
-                  <div className="flex items-center gap-1 text-amber-600 font-semibold text-[11px]">
-                    <Star className="w-3.5 h-3.5 fill-current" />
-                    <span>{doc.rating} ({doc.reviewCount})</span>
-                  </div>
-
-                  <span className="text-[11px] text-brand-primary font-semibold">
-                    {doc.availableNext}
-                  </span>
-                </div>
-              </div>
-            ))}
+              {/* Reset Sort / Filter */}
+              {(priceSort !== "none" || locationSort !== "none" || searchSymptom) && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPriceSort("none");
+                    setLocationSort("none");
+                    setSearchSymptom("");
+                  }}
+                  className="p-2.5 rounded-xl bg-surface hover:bg-surface/80 border border-border text-text-muted hover:text-text-main transition-colors text-xs font-medium"
+                  title="Reset search and sort filters"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
           </div>
+
+          {/* Active Filter Chips */}
+          {(priceSort !== "none" || locationSort !== "none") && (
+            <div className="flex items-center gap-2 text-xs">
+              <span className="text-text-muted text-[11px]">Active Sorting:</span>
+              {priceSort !== "none" && (
+                <span className="px-2.5 py-1 rounded-lg bg-brand-primary/10 text-brand-primary border border-brand-primary/20 font-medium flex items-center gap-1">
+                  <IndianRupee className="w-3 h-3" />
+                  <span>{priceSort === "asc" ? "Price: Low to High" : "Price: High to Low"}</span>
+                  <button
+                    type="button"
+                    onClick={() => setPriceSort("none")}
+                    className="hover:text-red-600 ml-1 font-bold"
+                  >
+                    ×
+                  </button>
+                </span>
+              )}
+              {locationSort !== "none" && (
+                <span className="px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-200 font-medium flex items-center gap-1">
+                  <MapPin className="w-3 h-3 text-emerald-600" />
+                  <span>{locationSort === "nearest" ? "Nearest Distance First" : "Alphabetical Location"}</span>
+                  <button
+                    type="button"
+                    onClick={() => setLocationSort("none")}
+                    className="hover:text-red-600 ml-1 font-bold"
+                  >
+                    ×
+                  </button>
+                </span>
+              )}
+            </div>
+          )}
+
+          {/* Doctor Cards Grid */}
+          {filteredDoctors.length === 0 ? (
+            <div className="p-8 text-center bg-surface/30 rounded-2xl border border-dashed border-border space-y-2 text-xs text-text-muted">
+              <Search className="w-8 h-8 text-brand-primary mx-auto opacity-50" />
+              <p className="font-semibold text-text-main">No doctors match your query.</p>
+              <p className="text-[11px]">Try searching for other symptoms like fever, chest discomfort, asthma, or clear the search filters.</p>
+              <button
+                type="button"
+                onClick={() => {
+                  setPriceSort("none");
+                  setLocationSort("none");
+                  setSearchSymptom("");
+                }}
+                className="mt-2 px-3 py-1.5 rounded-xl bg-brand-primary text-white font-semibold text-xs inline-flex items-center gap-1 shadow-xs"
+              >
+                Reset Filters
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {filteredDoctors.map((doc) => (
+                <div
+                  key={doc.id}
+                  className="p-4 sm:p-5 rounded-2xl bg-surface/30 border border-border hover:border-brand-primary/50 transition-all flex flex-col justify-between space-y-3.5 shadow-xs"
+                >
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-surface text-brand-primary border border-border">
+                        {doc.hospitalName}
+                      </span>
+                      <span className="text-xs font-bold text-brand-primary flex items-center gap-0.5">
+                        <IndianRupee className="w-3 h-3" />
+                        <span>{doc.consultationFee}</span>
+                      </span>
+                    </div>
+
+                    <div>
+                      <h3 className="text-sm font-bold text-text-main">{doc.name}</h3>
+                      <div className="text-xs font-semibold text-text-muted mt-0.5">
+                        {doc.specialty} • {doc.experienceYears} yrs exp
+                      </div>
+                    </div>
+
+                    {/* Location & Distance Row */}
+                    <div className="flex items-center gap-1.5 text-xs text-text-muted bg-white/80 p-2 rounded-xl border border-border/60">
+                      <MapPin className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" />
+                      <span className="truncate">{doc.location}</span>
+                      <span className="text-emerald-700 font-semibold font-mono text-[11px] flex-shrink-0">
+                        ({doc.distanceKm} km)
+                      </span>
+                    </div>
+
+                    <p className="text-[11px] text-text-muted leading-relaxed line-clamp-2">
+                      {doc.bio}
+                    </p>
+                  </div>
+
+                  <div className="pt-2 border-t border-border flex items-center justify-between text-xs">
+                    <div className="flex items-center gap-1 text-amber-600 font-semibold text-[11px]">
+                      <Star className="w-3.5 h-3.5 fill-current" />
+                      <span>{doc.rating} ({doc.reviewCount})</span>
+                      <span className="text-text-muted ml-1 text-[10px]">
+                        • {doc.peerUpvotes} upvotes
+                      </span>
+                    </div>
+
+                    <span className="text-[11px] text-brand-primary font-semibold">
+                      {doc.availableNext}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
