@@ -1,3 +1,4 @@
+// MedNexus Clinical System: PersonaSwitcher.tsx
 "use client";
 
 import React, { useState } from "react";

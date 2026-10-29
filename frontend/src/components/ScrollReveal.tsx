@@ -1,3 +1,4 @@
+// MedNexus Clinical System: ScrollReveal.tsx
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";

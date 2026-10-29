@@ -1,3 +1,4 @@
+# MedNexus AI Clinical Microservice: review_moderator.py
 """
 Review Defamation & Toxicity Moderator (services/review_moderator.py)
 Distinguishes between protected institutional feedback (workload, equipment, safety, pay)

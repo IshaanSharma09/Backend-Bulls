@@ -1,3 +1,4 @@
+# MedNexus AI Clinical Microservice: medication_parser.py
 """
 Medication Dosage & Schedule Parser (services/medication_parser.py)
 Parses unstructured prescription strings into structured daily regimen objects

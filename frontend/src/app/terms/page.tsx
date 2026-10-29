@@ -1,3 +1,4 @@
+// MedNexus Clinical System: page.tsx
 import React from "react";
 import Link from "next/link";
 import { ArrowLeft, Scale, ShieldAlert, CheckCircle2 } from "lucide-react";

@@ -1,3 +1,6 @@
+"""
+MedNexus Central Clinical Gateway - High-Concurrency OPD Triage & Consent Verification
+"""
 import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware

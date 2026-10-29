@@ -1,3 +1,4 @@
+# MedNexus AI Clinical Microservice: jan_aushadhi_engine.py
 """
 Jan Aushadhi Generic Mapping Engine (services/jan_aushadhi_engine.py)
 Maps branded drugs to Pradhan Mantri Bhartiya Janaushadhi Pariyojana (PMBI) generic equivalents.

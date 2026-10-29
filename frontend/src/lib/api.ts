@@ -1,3 +1,4 @@
+// MedNexus Clinical System: api.ts
 import { BACKEND_URL, AI_URL } from "./config";
 import mockCasesData from "../mock/cases.json";
 import mockHospitalsData from "../mock/hospitals.json";

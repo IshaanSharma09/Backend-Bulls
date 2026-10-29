@@ -1,3 +1,4 @@
+<!-- MedNexus AI Documentation: README.md -->
 # MedNexus AI Engine (Laptop 3)
 
 > **Rural-to-Metro Clinical OS & Verified Pseudonymous Doctor Network**  

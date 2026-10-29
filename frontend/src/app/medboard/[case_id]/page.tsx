@@ -1,3 +1,4 @@
+// MedNexus Clinical Case Details View
 "use client";
 
 import React, { useEffect, useState } from "react";

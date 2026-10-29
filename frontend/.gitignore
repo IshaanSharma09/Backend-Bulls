@@ -1,3 +1,4 @@
+# MedNexus Next.js Build Ignored Files
 # Dependencies
 /node_modules
 /.pnp

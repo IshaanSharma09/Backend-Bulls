@@ -7,7 +7,11 @@
       "spoke_origin": "Kosi Rural Health Spoke",
       "urgency_score": 92,
       "status": "confirmed",
-      "fee_split": { "patient_paid": 500, "spoke_share": 150, "hub_fee": 350 }
+      "fee_split": {
+        "patient_paid": 500,
+        "spoke_share": 150,
+        "hub_fee": 350
+      }
     },
     {
       "slot_id": "slot_02",
@@ -16,7 +20,11 @@
       "spoke_origin": "Purnia Clinic Spoke",
       "urgency_score": 58,
       "status": "booked",
-      "fee_split": { "patient_paid": 500, "spoke_share": 150, "hub_fee": 350 }
+      "fee_split": {
+        "patient_paid": 500,
+        "spoke_share": 150,
+        "hub_fee": 350
+      }
     },
     {
       "slot_id": "slot_03",
@@ -25,7 +33,11 @@
       "spoke_origin": "Saharsa Primary Clinic",
       "urgency_score": 72,
       "status": "booked",
-      "fee_split": { "patient_paid": 500, "spoke_share": 150, "hub_fee": 350 }
+      "fee_split": {
+        "patient_paid": 500,
+        "spoke_share": 150,
+        "hub_fee": 350
+      }
     },
     {
       "slot_id": "slot_04",
@@ -34,7 +46,11 @@
       "spoke_origin": "Kishanganj Health Center",
       "urgency_score": 64,
       "status": "booked",
-      "fee_split": { "patient_paid": 500, "spoke_share": 150, "hub_fee": 350 }
+      "fee_split": {
+        "patient_paid": 500,
+        "spoke_share": 150,
+        "hub_fee": 350
+      }
     }
   ],
   "simulatedCancellation": {

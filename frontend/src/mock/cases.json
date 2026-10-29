@@ -72,12 +72,22 @@
       "specialty_tag": "c/CardioEmergency",
       "author_pseudonym": "Dr_Kosi_Care",
       "author_badge": "Verified Spoke Physician, 4 yrs",
-      "patient_demographics": { "age": 34, "gender": "Male" },
+      "patient_demographics": {
+        "age": 34,
+        "gender": "Male"
+      },
       "chief_complaint": "Severe retrosternal crushing chest pain",
-      "vitals": { "bp": "90/60 mmHg", "pulse": 118, "spo2": 91, "temp": 98.4 },
+      "vitals": {
+        "bp": "90/60 mmHg",
+        "pulse": 118,
+        "spo2": 91,
+        "temp": 98.4
+      },
       "history": "Farmer, heavy lifting during paddy harvest. No prior known cardiac history. Smoker.",
       "labs_and_ecg": "ST elevation leads V2-V5. Troponin T positive.",
-      "imaging_urls": ["/uploads/cases/ecg_anonymized_01.jpg"],
+      "imaging_urls": [
+        "/uploads/cases/ecg_anonymized_01.jpg"
+      ],
       "bounty_amount": 350,
       "urgency_score": 92,
       "consensus_status": "in_progress",
@@ -102,9 +112,17 @@
       "specialty_tag": "c/Neurology",
       "author_pseudonym": "Dr_Kosi_Care",
       "author_badge": "Verified Spoke Physician, 4 yrs",
-      "patient_demographics": { "age": 62, "gender": "Female" },
+      "patient_demographics": {
+        "age": 62,
+        "gender": "Female"
+      },
       "chief_complaint": "Acute onset right hemiplegia and expressive aphasia 90 mins ago",
-      "vitals": { "bp": "180/100 mmHg", "pulse": 88, "spo2": 96, "temp": 98.6 },
+      "vitals": {
+        "bp": "180/100 mmHg",
+        "pulse": 88,
+        "spo2": 96,
+        "temp": 98.6
+      },
       "history": "Hypertensive on irregular medication. Symptom onset 14:00 today while talking to family.",
       "labs_and_ecg": "Non-contrast CT brain excluded hemorrhage. Dense MCA sign seen.",
       "imaging_urls": [],
@@ -132,9 +150,17 @@
       "specialty_tag": "c/Pediatrics",
       "author_pseudonym": "Dr_Kosi_Care",
       "author_badge": "Verified Spoke Physician, 4 yrs",
-      "patient_demographics": { "age": 7, "gender": "Male" },
+      "patient_demographics": {
+        "age": 7,
+        "gender": "Male"
+      },
       "chief_complaint": "Persistent high-grade fever, petechial rash on shins, abdominal pain",
-      "vitals": { "bp": "96/64 mmHg", "pulse": 126, "spo2": 97, "temp": 102.8 },
+      "vitals": {
+        "bp": "96/64 mmHg",
+        "pulse": 126,
+        "spo2": 97,
+        "temp": 102.8
+      },
       "history": "Fever for 5 days refractory to paracetamol. Severe lethargy today.",
       "labs_and_ecg": "Platelets 42,000/uL, Hematocrit 44%, NS1 Antigen Positive.",
       "imaging_urls": [],
@@ -162,9 +188,17 @@
       "specialty_tag": "c/GeneralMedicine",
       "author_pseudonym": "Dr_Kosi_Care",
       "author_badge": "Verified Spoke Physician, 4 yrs",
-      "patient_demographics": { "age": 45, "gender": "Male" },
+      "patient_demographics": {
+        "age": 45,
+        "gender": "Male"
+      },
       "chief_complaint": "Accidental inhalation of pesticide spray while spraying paddy",
-      "vitals": { "bp": "100/60 mmHg", "pulse": 48, "spo2": 88, "temp": 97.8 },
+      "vitals": {
+        "bp": "100/60 mmHg",
+        "pulse": 48,
+        "spo2": 88,
+        "temp": 97.8
+      },
       "history": "Farmer brought unconscious with miosis, copious oral secretions, muscle fasciculations.",
       "labs_and_ecg": "Pseudocholinesterase levels severely depressed.",
       "imaging_urls": [],

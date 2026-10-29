@@ -1,3 +1,4 @@
+# MedNexus AI Clinical Microservice: patient_report_generator.py
 """
 Full AI Health Report Generator (services/patient_report_generator.py)
 Synthesizes clinical demographics, symptoms, ECG findings, allergies, and lab tests into:

@@ -1,3 +1,4 @@
+// MedNexus Clinical System: UrgentQueueCard.tsx
 "use client";
 
 import React from "react";

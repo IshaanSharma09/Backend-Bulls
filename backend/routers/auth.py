@@ -1,3 +1,4 @@
+# MedNexus Core Clinical Router: auth.py
 import hashlib
 import secrets
 from typing import Optional

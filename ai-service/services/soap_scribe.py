@@ -1,3 +1,4 @@
+# MedNexus AI Clinical Microservice: soap_scribe.py
 """
 Clinical SOAP Scribe & Urgency Scorer (services/soap_scribe.py)
 Transforms doctor shorthand / spoken rough notes and patient longitudinal timeline

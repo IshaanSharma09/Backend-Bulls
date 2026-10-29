@@ -1,3 +1,6 @@
+"""
+MedNexus Data Models - Clinical Profiles, Dynamic 15-Minute Safe Codes & OPD Triage
+"""
 from sqlalchemy import Column, String, Integer, Float, Boolean, Text, BigInteger, ForeignKey
 from sqlalchemy.orm import relationship
 from database import Base

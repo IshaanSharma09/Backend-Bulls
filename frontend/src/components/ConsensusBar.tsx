@@ -1,3 +1,4 @@
+// MedNexus Clinical System: ConsensusBar.tsx
 "use client";
 
 import React from "react";

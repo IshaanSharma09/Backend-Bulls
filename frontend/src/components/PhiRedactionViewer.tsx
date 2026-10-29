@@ -1,3 +1,4 @@
+// MedNexus Clinical System: PhiRedactionViewer.tsx
 "use client";
 
 import React from "react";

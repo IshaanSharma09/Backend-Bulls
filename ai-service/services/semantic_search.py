@@ -1,3 +1,4 @@
+# MedNexus AI Clinical Microservice: semantic_search.py
 """
 Semantic Case Search & Guidelines RAG (services/semantic_search.py)
 Matches clinical dilemmas against a benchmark library of 15 classic Indian rural-to-metro protocols.

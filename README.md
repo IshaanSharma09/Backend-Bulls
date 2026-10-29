@@ -1,3 +1,4 @@
+<!-- MedNexus Clinical Health Platform - Updated 2026 -->
 <div align="center">
 
 # MedNexus

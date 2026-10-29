@@ -1,3 +1,4 @@
+# MedNexus AI Clinical Microservice: phi_scrubber.py
 """
 PHI De-Identification Engine (services/phi_scrubber.py)
 Pre-flight de-identification of medical cases before sharing on MedBoard or tele-consult.

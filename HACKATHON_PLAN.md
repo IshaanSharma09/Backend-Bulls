@@ -1,3 +1,4 @@
+<!-- MedNexus Clinical Health Platform - Updated 2026 -->
 # MedNexus B2B: Hackathon Implementation Plan & Zero-Conflict Architecture
 
 **Project:** MedNexus B2B — Rural-to-Metro Clinical OS & Verified Pseudonymous Doctor Network  
