@@ -134,7 +134,7 @@ function DoctorHospitalDashboardContent() {
           profile: res.profile,
           organConditions: res.organConditions || [],
           familyMember: res.familyMember,
-          clinicalSummary: res.clinicalSummary || (res.familyMember ? clinicalStore.buildClinicalSummary(res.familyMember) : undefined),
+          clinicalSummary: res.clinicalSummary || (res.familyMember ? clinicalStore.buildClinicalSummary(res.familyMember, searchParams.get("scope") || "Cardiology") : undefined),
         });
         setPatientPrescriptions(res.prescriptions || clinicalStore.getDigitalPrescriptions(res.profile.patientId));
         setLookupError(null);
@@ -185,7 +185,7 @@ function DoctorHospitalDashboardContent() {
         profile: res.profile,
         organConditions: res.organConditions || [],
         familyMember: res.familyMember,
-        clinicalSummary: res.clinicalSummary || (res.familyMember ? clinicalStore.buildClinicalSummary(res.familyMember) : undefined),
+        clinicalSummary: res.clinicalSummary || (res.familyMember ? clinicalStore.buildClinicalSummary(res.familyMember, searchParams.get("scope") || "Cardiology") : undefined),
       });
       setPatientPrescriptions(res.prescriptions || clinicalStore.getDigitalPrescriptions(res.profile.patientId));
       setLookupError(null);
@@ -927,6 +927,32 @@ DIAGNOSTIC INTERPRETATION:
               {/* AI CLINICAL FILTER & EXECUTIVE SUMMARY (OPD SPEED BRIEFING) */}
               {unlockedPatient.clinicalSummary && (
                 <div className="p-4 rounded-xl bg-surface/90 border border-brand-primary/40 text-text-main space-y-3.5 shadow-xs">
+                  {unlockedPatient.clinicalSummary.privacyShield?.isMaskActive && (
+                    <div className="p-3 rounded-lg bg-amber-50 border border-amber-300 text-amber-950 space-y-2">
+                      <div className="flex flex-wrap items-center justify-between gap-1.5">
+                        <div className="flex items-center gap-1.5 text-xs font-bold text-amber-900">
+                          <Lock className="w-3.5 h-3.5 text-amber-700" />
+                          <span>PATIENT PRIVACY SHIELD (SPECIALTY-SCOPED ACCESS)</span>
+                        </div>
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-200 text-amber-900 border border-amber-300">
+                          Scope: {unlockedPatient.clinicalSummary.privacyShield.consultationScope} Only
+                        </span>
+                      </div>
+                      <p className="text-xs text-amber-900/90 leading-relaxed">
+                        Patient {unlockedPatient.profile.patientName} has authorized access for <strong>{unlockedPatient.clinicalSummary.privacyShield.consultationScope}</strong> consultation only.
+                        {unlockedPatient.clinicalSummary.privacyShield.maskedConditionsCount} sensitive or unrelated condition(s) (including private area/urology) are automatically shielded from your OPD view under Patient Consent (DPDP Act 2023).
+                      </p>
+                      <div className="flex flex-wrap items-center justify-between gap-2 pt-1.5 border-t border-amber-200 text-[11px]">
+                        <span className="text-emerald-800 font-semibold flex items-center gap-1.5">
+                          <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                          Life-Saving Allergy Shield: 100% Enforced
+                        </span>
+                        <span className="text-[10px] text-amber-800 italic">
+                          Need-to-know access control active
+                        </span>
+                      </div>
+                    </div>
+                  )}
                   <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border pb-2.5">
                     <div className="flex items-center gap-2">
                       <div className="w-6 h-6 rounded-md bg-brand-primary text-white flex items-center justify-center font-bold text-xs">

@@ -28,6 +28,7 @@ from services.review_moderator import moderate_review
 from services.semantic_search import search_clinical_cases, generate_assistant_pin
 from services.soap_scribe import generate_soap_scribe
 from services.jan_aushadhi_engine import get_jan_aushadhi_savings
+from services.medical_ocr_engine import process_medical_document
 
 # Initialize FastAPI App
 app = FastAPI(
@@ -420,6 +421,8 @@ class ClinicalFilterSummaryRequest(BaseModel):
     organ_conditions: List[Dict[str, Any]] = Field(default_factory=list)
     current_medicines: List[Dict[str, Any]] = Field(default_factory=list)
     lab_results: List[Dict[str, Any]] = Field(default_factory=list)
+    doctor_specialty: Optional[str] = "Cardiology"
+    consent_scope: Optional[str] = "Cardiology"
 
 @app.post("/api/ai/clinical-summary-filter")
 def endpoint_clinical_summary_filter(req: ClinicalFilterSummaryRequest):
@@ -432,7 +435,55 @@ def endpoint_clinical_summary_filter(req: ClinicalFilterSummaryRequest):
         organ_conditions=req.organ_conditions,
         current_medicines=req.current_medicines,
         lab_results=req.lab_results,
+        doctor_specialty=req.doctor_specialty,
+        consent_scope=req.consent_scope,
     )
+
+
+# 11. Ultimate OCR & Document Processing Endpoints
+class OcrJsonRequest(BaseModel):
+    filename: str = "prescription.pdf"
+    category: str = "Prescription"
+    base64_data: Optional[str] = None
+    raw_text: Optional[str] = None
+
+@app.post("/api/ai/ocr-medical-report")
+def endpoint_ocr_medical_report(req: OcrJsonRequest):
+    file_bytes = b""
+    if req.base64_data:
+        try:
+            # Strip data url prefix if present
+            b64_str = req.base64_data.split(",")[-1]
+            file_bytes = base64.b64decode(b64_str)
+        except Exception:
+            pass
+    elif req.raw_text:
+        file_bytes = req.raw_text.encode("utf-8")
+
+    return process_medical_document(
+        file_bytes=file_bytes,
+        filename=req.filename,
+        category=req.category
+    )
+
+@app.post("/api/ai/ocr-upload")
+async def endpoint_ocr_upload(
+    file: UploadFile = File(...),
+    category: str = Form("auto"),
+    patient_id: Optional[str] = Form(None)
+):
+    try:
+        content = await file.read()
+        parsed = process_medical_document(
+            file_bytes=content,
+            filename=file.filename or "uploaded_document.pdf",
+            category=category
+        )
+        parsed["patient_id"] = patient_id
+        return parsed
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"OCR Processing failed: {str(e)}")
+
 
 
 if __name__ == "__main__":

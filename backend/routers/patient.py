@@ -1,9 +1,12 @@
+import httpx
+import sys
+import os
 import json
 import time
 import random
 import secrets
 from typing import Optional, List, Dict, Any
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form, Query
 from sqlalchemy.orm import Session
 from database import get_db
 from models import Patient, PatientAccessCode
@@ -151,7 +154,12 @@ def verify_patient_code(payload: VerifyCodeRequest, db: Session = Depends(get_db
 # ---------------- 1b. Clinical Filter & Summary API ----------------
 @router.get("/patient/{patient_id}/clinical-summary-filter")
 @router.post("/patient/{patient_id}/clinical-summary-filter")
-def get_patient_clinical_summary_filter(patient_id: str, db: Session = Depends(get_db)):
+def get_patient_clinical_summary_filter(
+    patient_id: str,
+    doctor_specialty: Optional[str] = Query("Cardiology"),
+    consent_scope: Optional[str] = Query("Cardiology"),
+    db: Session = Depends(get_db)
+):
     patient = db.query(Patient).filter(Patient.patient_id == patient_id).first()
     if not patient:
         # Default fallback for family demo IDs
@@ -197,6 +205,15 @@ def get_patient_clinical_summary_filter(patient_id: str, db: Session = Depends(g
                 "status": "Managed",
                 "severity": "Moderate",
                 "futureRiskAlert": "Maintain target BP under 130/80 mmHg."
+            },
+            {
+                "organSystem": "Urology & Reproductive (Private / Sensitive)",
+                "conditionName": "Inguinal Groin Dermatosis & Benign Prostatic Hypertrophy",
+                "diagnosedYear": "2023",
+                "status": "Managed",
+                "severity": "Mild",
+                "isPrivateSensitive": True,
+                "futureRiskAlert": "Confidential private condition shielded from non-matching specialists."
             },
             {
                 "organSystem": "Gastrointestinal (Stomach & Liver)",
@@ -542,3 +559,89 @@ def prescribe_drug_with_safety_check(
         warning_message=warning_text,
         jan_aushadhi_alternative=alt,
     )
+
+
+@router.post("/patient/upload-medical-report")
+async def upload_medical_report_ocr(
+    file: UploadFile = File(...),
+    category: str = Form("auto"),
+    patient_id: Optional[str] = Form("RAMESH-54"),
+    db: Session = Depends(get_db)
+):
+    """
+    Ultimate Medical OCR Ingestion Endpoint.
+    Accepts PDF or Image (Prescriptions, Lab Blood Reports, X-Rays),
+    applies PyMuPDF + Gemini Multimodal extraction, and updates the patient records.
+    """
+    try:
+        content = await file.read()
+        filename = file.filename or "uploaded_report.pdf"
+
+        # Call AI service OCR endpoint on port 8001
+        ocr_result = None
+        try:
+            async with httpx.AsyncClient(timeout=15.0) as client:
+                files = {"file": (filename, content, file.content_type or "application/octet-stream")}
+                data = {"category": category, "patient_id": patient_id}
+                res = await client.post("http://localhost:8001/api/ai/ocr-upload", files=files, data=data)
+                if res.status_code == 200:
+                    ocr_result = res.json()
+        except Exception as ai_err:
+            print(f"[Backend] AI OCR proxy error: {ai_err}")
+
+        # Fallback local parser if AI service not responding
+        if not ocr_result:
+            from services.medical_ocr_engine import process_medical_document
+            ocr_result = process_medical_document(content, filename, category)
+
+        # Persist extracted report into patient's SQLite lab files
+        target_id = patient_id or "RAMESH-54"
+        patient = db.query(Patient).filter(Patient.patient_id == target_id).first()
+        if patient:
+            try:
+                labs = json.loads(patient.lab_files_json) if patient.lab_files_json else []
+            except Exception:
+                labs = []
+
+            new_lab_entry = {
+                "id": f"lab-{int(time.time())}",
+                "name": ocr_result.get("title", filename),
+                "category": ocr_result.get("report_type", category.capitalize()),
+                "date": time.strftime("%d %b %Y"),
+                "fileSize": f"{round(len(content) / 1024, 1)} KB",
+                "notes": ocr_result.get("clinical_summary", "Extracted via Ultimate OCR & Gemini Vision Engine."),
+                "ocr_data": ocr_result
+            }
+            labs.insert(0, new_lab_entry)
+            patient.lab_files_json = json.dumps(labs)
+
+            # If prescription, also optionally append detected medications
+            if ocr_result.get("report_type") == "Prescription" and ocr_result.get("medications"):
+                try:
+                    current_meds = json.loads(patient.current_medicines_json) if patient.current_medicines_json else []
+                except Exception:
+                    current_meds = []
+                for med in ocr_result.get("medications", []):
+                    med_name = med.get("drug_name")
+                    if med_name and not any(m.get("name", "").lower() == med_name.lower() for m in current_meds):
+                        current_meds.append({
+                            "id": f"med-{len(current_meds) + 1}",
+                            "name": med_name,
+                            "dose": med.get("dosage", "As advised"),
+                            "frequency": med.get("frequency", "Daily"),
+                            "instructions": med.get("indication", "Prescribed by physician")
+                        })
+                patient.current_medicines_json = json.dumps(current_meds)
+
+            db.commit()
+
+        return {
+            "status": "success",
+            "message": "Medical report successfully processed with Ultimate OCR.",
+            "patient_id": target_id,
+            "report_summary": ocr_result.get("clinical_summary", "Extraction completed."),
+            "ocr_result": ocr_result
+        }
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Medical document processing failed: {str(e)}")
