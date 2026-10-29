@@ -20,7 +20,7 @@ from PIL import Image, ImageDraw
 
 from config import HOST, PORT, is_gemini_available
 from services.patient_report_generator import generate_patient_health_report
-from services.patient_health_summary import generate_crisp_health_summary
+from services.patient_health_summary import generate_crisp_health_summary, generate_clinical_filter_summary
 from services.medication_parser import parse_medication_schedule
 from services.doctor_matcher import match_doctor_specialty
 from services.phi_scrubber import sanitize_medical_text
@@ -408,6 +408,34 @@ def endpoint_soap_scribe(req: SoapScribeRequest):
     return result
 
 
+
+
+# 10. Clinical Filter & Patient Summary Generator
+class ClinicalFilterSummaryRequest(BaseModel):
+    patient_name: str = "Ramesh Kumar"
+    age: int = 42
+    gender: str = "Male"
+    relationship: str = "Self"
+    allergies: List[str] = Field(default_factory=list)
+    organ_conditions: List[Dict[str, Any]] = Field(default_factory=list)
+    current_medicines: List[Dict[str, Any]] = Field(default_factory=list)
+    lab_results: List[Dict[str, Any]] = Field(default_factory=list)
+
+@app.post("/api/ai/clinical-summary-filter")
+def endpoint_clinical_summary_filter(req: ClinicalFilterSummaryRequest):
+    return generate_clinical_filter_summary(
+        patient_name=req.patient_name,
+        age=req.age,
+        gender=req.gender,
+        relationship=req.relationship,
+        allergies=req.allergies,
+        organ_conditions=req.organ_conditions,
+        current_medicines=req.current_medicines,
+        lab_results=req.lab_results,
+    )
+
+
 if __name__ == "__main__":
+
     import uvicorn
     uvicorn.run("main:app", host=HOST, port=PORT, reload=True)

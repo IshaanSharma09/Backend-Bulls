@@ -16,7 +16,7 @@ class GenerateCodeResponse(BaseModel):
 
 
 class VerifyCodeRequest(BaseModel):
-    patient_id: str
+    patient_id: Optional[str] = None
     code: str
 
 

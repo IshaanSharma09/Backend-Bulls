@@ -60,12 +60,3 @@ body {
   background: #0E7C6B;
 }
 
-/* Ensure any Spline logo or watermark overlay remains short and compact */
-a[href*="spline.design"],
-#spline-watermark,
-.spline-watermark {
-  transform: scale(0.65) !important;
-  transform-origin: bottom right !important;
-  opacity: 0.75 !important;
-}
-

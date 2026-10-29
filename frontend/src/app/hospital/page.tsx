@@ -15,6 +15,7 @@ import {
   DigitalPrescription,
   OrganConditionRecord,
   FamilyMemberProfile,
+  ClinicalFilterSummary,
 } from "../../lib/clinicalStore";
 import {
   Building2,
@@ -40,6 +41,8 @@ import {
   Trash2,
   Edit3,
   UserPlus,
+  Printer,
+  Sparkles,
   Heart,
   Wind,
   Flame,
@@ -77,7 +80,9 @@ function DoctorHospitalDashboardContent() {
     profile: PatientHealthProfile;
     organConditions?: OrganConditionRecord[];
     familyMember?: FamilyMemberProfile;
+    clinicalSummary?: ClinicalFilterSummary;
   } | null>(null);
+  const [showFullData, setShowFullData] = useState(false);
 
   // Queue Notification & Modals
   const [queueNotice, setQueueNotice] = useState<string | null>(null);
@@ -119,6 +124,22 @@ function DoctorHospitalDashboardContent() {
     if (tabParam === "queue" || tabParam === "roster" || tabParam === "search") {
       setActiveTab(tabParam);
     }
+    const codeParam = searchParams.get("code");
+    if (codeParam) {
+      setActiveTab("search");
+      setEnteredConsentCode(codeParam);
+      const res = clinicalStore.verifyPatientAccess(codeParam);
+      if (res.success && res.profile) {
+        setUnlockedPatient({
+          profile: res.profile,
+          organConditions: res.organConditions || [],
+          familyMember: res.familyMember,
+          clinicalSummary: res.clinicalSummary || (res.familyMember ? clinicalStore.buildClinicalSummary(res.familyMember) : undefined),
+        });
+        setPatientPrescriptions(res.prescriptions || clinicalStore.getDigitalPrescriptions(res.profile.patientId));
+        setLookupError(null);
+      }
+    }
   }, [searchParams]);
 
   useEffect(() => {
@@ -141,12 +162,18 @@ function DoctorHospitalDashboardContent() {
     setTimeout(() => setQueueNotice(null), 5000);
   };
 
-  // Handle Search & Code Verification
-  const handleVerifyPatientCode = (e: React.FormEvent) => {
-    e.preventDefault();
+  // Handle Search & Code Verification (Simplified Single-Code Matching)
+  const handleVerifyPatientCode = (e?: React.FormEvent, overrideCode?: string) => {
+    if (e) e.preventDefault();
     setLookupError(null);
 
-    const res = clinicalStore.verifyPatientAccess(searchPatientId, enteredConsentCode);
+    const target = overrideCode || enteredConsentCode.trim() || searchPatientId.trim();
+    if (!target) {
+      setLookupError("Please enter a 6-digit dynamic patient code or patient ID.");
+      return;
+    }
+
+    const res = clinicalStore.verifyPatientAccess(target);
     if (!res.success) {
       setLookupError(res.error || "Access Denied: Invalid patient consent code.");
       setUnlockedPatient(null);
@@ -158,9 +185,11 @@ function DoctorHospitalDashboardContent() {
         profile: res.profile,
         organConditions: res.organConditions || [],
         familyMember: res.familyMember,
+        clinicalSummary: res.clinicalSummary || (res.familyMember ? clinicalStore.buildClinicalSummary(res.familyMember) : undefined),
       });
-      setPatientPrescriptions(res.prescriptions || clinicalStore.getDigitalPrescriptions(searchPatientId));
+      setPatientPrescriptions(res.prescriptions || clinicalStore.getDigitalPrescriptions(res.profile.patientId));
       setLookupError(null);
+      showNotification(`Patient record for ${res.profile.patientName} unlocked successfully.`);
     }
   };
 
@@ -786,68 +815,74 @@ DIAGNOSTIC INTERPRETATION:
             </p>
           </div>
 
-          <form onSubmit={handleVerifyPatientCode} className="space-y-4 max-w-xl">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-bold text-text-main mb-1.5">
-                  1. Unique Patient ID / ABHA
-                </label>
-                <div className="relative">
-                  <User className="w-4 h-4 text-text-muted absolute left-3.5 top-3" />
-                  <input
-                    type="text"
-                    required
-                    value={searchPatientId}
-                    onChange={(e) => setSearchPatientId(e.target.value)}
-                    placeholder="e.g. RAMESH-54"
-                    className="w-full rounded-xl bg-surface/50 border border-border pl-10 pr-4 py-2.5 text-xs font-mono text-text-main focus:outline-none focus:border-brand-primary"
-                  />
-                </div>
+          {/* SIMPLIFIED 1-INPUT DYNAMIC CODE UNLOCK & 1-CLICK TEST CHIPS */}
+          <div className="space-y-3.5 max-w-2xl">
+            <form onSubmit={(e) => handleVerifyPatientCode(e)} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+              <div className="relative flex-1">
+                <Key className="w-4 h-4 text-amber-600 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  required
+                  value={enteredConsentCode}
+                  onChange={(e) => setEnteredConsentCode(e.target.value)}
+                  placeholder="Enter patient's 6-digit dynamic code (e.g. 849201) or ID..."
+                  className="w-full rounded-xl bg-surface/50 border border-border pl-10 pr-4 py-2.5 text-xs font-mono tracking-widest text-text-main focus:outline-hidden focus:border-brand-primary shadow-xs"
+                />
               </div>
 
-              <div>
-                <label className="block text-xs font-bold text-text-main mb-1.5">
-                  2. Patient&apos;s Live Dynamic 6-Digit Code
-                </label>
-                <div className="relative">
-                  <Lock className="w-4 h-4 text-text-muted absolute left-3.5 top-3" />
-                  <input
-                    type="text"
-                    required
-                    value={enteredConsentCode}
-                    onChange={(e) => setEnteredConsentCode(e.target.value)}
-                    placeholder="Enter 6-digit code (e.g. 849201)"
-                    className="w-full rounded-xl bg-surface/50 border border-border pl-10 pr-4 py-2.5 text-xs font-mono tracking-widest text-text-main focus:outline-none focus:border-brand-primary"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
-              <span className="text-[11px] text-text-muted">
-                Active Code for Ramesh: <strong className="font-mono text-brand-primary">849201</strong> (from Patient Portal).
-              </span>
-
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-shrink-0">
                 {unlockedPatient && (
                   <button
                     type="button"
                     onClick={handleClosePatientSession}
-                    className="px-4 py-2 rounded-xl bg-surface hover:bg-surface/80 text-text-main border border-border text-xs font-semibold"
+                    className="px-3.5 py-2.5 rounded-xl bg-surface hover:bg-surface/80 text-text-main border border-border text-xs font-semibold"
                   >
                     Lock Session
                   </button>
                 )}
                 <button
                   type="submit"
-                  className="px-5 py-2.5 rounded-xl bg-brand-primary hover:bg-brand-primary/90 text-white text-xs font-semibold flex items-center gap-2 shadow-sm"
+                  className="px-4 py-2.5 rounded-xl bg-brand-primary hover:bg-brand-primary/90 text-white text-xs font-semibold flex items-center gap-1.5 shadow-xs transition-all"
                 >
                   <Unlock className="w-4 h-4" />
-                  <span>Verify Code & Unlock Record</span>
+                  <span>Unlock Record</span>
                 </button>
               </div>
+            </form>
+
+            {/* Quick 1-Click Code Test Chips */}
+            <div className="p-3 rounded-xl bg-surface/50 border border-border space-y-1.5">
+              <div className="flex items-center justify-between text-[11px] text-text-muted">
+                <span className="font-semibold text-text-main flex items-center gap-1">
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>Live Dynamic Access Codes (Click to auto-connect):</span>
+                </span>
+                <span>Auto-expiring in 15 mins</span>
+              </div>
+              <div className="flex flex-wrap gap-2 pt-0.5">
+                {[
+                  { name: "Ramesh Kumar", relation: "Self", code: "849201" },
+                  { name: "Sunita Devi", relation: "Spouse", code: "319482" },
+                  { name: "Ramprasad Kumar", relation: "Father", code: "592810" },
+                  { name: "Aarav Kumar", relation: "Son", code: "482910" },
+                ].map((item) => (
+                  <button
+                    key={item.code}
+                    type="button"
+                    onClick={() => {
+                      setEnteredConsentCode(item.code);
+                      handleVerifyPatientCode(undefined, item.code);
+                    }}
+                    className="px-2.5 py-1.5 rounded-lg bg-white hover:bg-surface border border-border text-[11px] font-semibold text-text-main flex items-center gap-1.5 transition-colors shadow-2xs"
+                  >
+                    <Key className="w-3 h-3 text-amber-600" />
+                    <span>{item.name} ({item.relation})</span>
+                    <strong className="font-mono text-brand-primary">{item.code}</strong>
+                  </button>
+                ))}
+              </div>
             </div>
-          </form>
+          </div>
 
           {lookupError && (
             <div className="p-4 rounded-xl bg-red-50 border border-red-300 text-red-800 text-xs font-semibold flex items-start gap-2 shadow-sm animate-fade-in">
@@ -871,13 +906,98 @@ DIAGNOSTIC INTERPRETATION:
                     ID: <span className="font-mono font-bold text-text-main">{unlockedPatient.profile.patientId}</span> | Blood Group: <strong className="font-mono text-brand-primary">{unlockedPatient.profile.bloodGroup}</strong> | Verified via 15-Minute Dynamic Code
                   </p>
                 </div>
-                <button
-                  onClick={handleClosePatientSession}
-                  className="px-3 py-1.5 rounded-lg bg-white border border-border text-xs font-semibold text-text-main hover:bg-surface shadow-sm"
-                >
-                  End Consultation & Lock
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => window.print()}
+                    className="px-3.5 py-1.5 rounded-lg bg-white border border-brand-primary/40 text-xs font-semibold text-brand-primary hover:bg-surface shadow-xs flex items-center gap-1.5"
+                  >
+                    <Printer className="w-3.5 h-3.5 text-brand-primary" />
+                    <span>Print Clinical Summary</span>
+                  </button>
+                  <button
+                    onClick={handleClosePatientSession}
+                    className="px-3 py-1.5 rounded-lg bg-white border border-border text-xs font-semibold text-text-main hover:bg-surface shadow-sm"
+                  >
+                    End Consultation & Lock
+                  </button>
+                </div>
               </div>
+
+              {/* AI CLINICAL FILTER & EXECUTIVE SUMMARY (OPD SPEED BRIEFING) */}
+              {unlockedPatient.clinicalSummary && (
+                <div className="p-4 rounded-xl bg-surface/90 border border-brand-primary/40 text-text-main space-y-3.5 shadow-xs">
+                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border pb-2.5">
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 rounded-md bg-brand-primary text-white flex items-center justify-center font-bold text-xs">
+                        AI
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-xs text-text-main uppercase tracking-wide">
+                          Executive Clinical Filter Briefing (OPD Speed View)
+                        </h4>
+                        <span className="text-[10px] text-text-muted">
+                          Multi-page past history synthesized by Clinical Filter Engine
+                        </span>
+                      </div>
+                    </div>
+                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200">
+                      {unlockedPatient.clinicalSummary.filterReductionRate}
+                    </span>
+                  </div>
+
+                  {/* 2-Sentence Plain Language Health Status */}
+                  <div className="p-3 rounded-xl bg-white border border-border space-y-1">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-text-muted block">
+                      Patient Health Status Overview:
+                    </span>
+                    <p className="text-xs text-text-main leading-relaxed font-medium">
+                      {unlockedPatient.clinicalSummary.plainLanguageSummaryEn}
+                    </p>
+                  </div>
+
+                  {/* Critical Contraindication Shield */}
+                  <div className="p-3.5 rounded-xl bg-red-50/80 border border-red-200 text-xs space-y-2">
+                    <div className="flex items-center gap-1.5 font-bold text-red-900 text-[11px] uppercase tracking-wide">
+                      <AlertTriangle className="w-4 h-4 text-red-600 flex-shrink-0" />
+                      <span>Critical Contraindications & Prescription Restrictions:</span>
+                    </div>
+                    <ul className="space-y-1 text-red-950 font-medium pl-1">
+                      {unlockedPatient.clinicalSummary.criticalContraindicationShield.map((alert, idx) => (
+                        <li key={idx} className="flex items-start gap-1.5 text-xs">
+                          <span className="text-red-600 font-bold">•</span>
+                          <span>{alert}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  {/* Action Directives for Attending Doctor */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+                    {unlockedPatient.clinicalSummary.clinicalActionDirectives.map((dir, idx) => (
+                      <div key={idx} className="p-2.5 rounded-lg bg-white border border-border space-y-0.5">
+                        <span className="text-[10px] font-bold text-text-muted uppercase">Step {idx + 1}</span>
+                        <div className="text-[11px] font-medium text-text-main">{dir}</div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Toggle to View Full Detailed Records */}
+                  <div className="flex items-center justify-between pt-1">
+                    <span className="text-[11px] text-text-muted">
+                      Full raw records (lab files, ECG trace, all vaccines) available below.
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setShowFullData(!showFullData)}
+                      className="px-3 py-1 rounded-lg bg-white border border-border text-xs font-semibold text-brand-primary hover:bg-surface flex items-center gap-1 shadow-2xs"
+                    >
+                      <span>{showFullData ? "Hide Full Data" : "View Full Patient Data"}</span>
+                      <ChevronRight className={`w-3.5 h-3.5 transition-transform ${showFullData ? "rotate-90" : ""}`} />
+                    </button>
+                  </div>
+                </div>
+              )}
 
               {/* Patient Allergies - High Alert Banner */}
               <div className="p-4 rounded-xl bg-red-50 border border-red-200 text-red-800 space-y-2 shadow-sm">

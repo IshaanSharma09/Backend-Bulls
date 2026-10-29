@@ -15,6 +15,7 @@ import {
   OrganSystem,
   FamilyMemberProfile,
   BookedAppointment,
+  ClinicalFilterSummary,
 } from "../../lib/clinicalStore";
 import {
   ShieldCheck,
@@ -99,6 +100,22 @@ function PatientDashboardContent() {
   const [bookingComplaint, setBookingComplaint] = useState("");
   const [confirmedPass, setConfirmedPass] = useState<BookedAppointment | null>(null);
   const [expSort, setExpSort] = useState<"none" | "desc" | "asc">("desc");
+  const [showSummaryModal, setShowSummaryModal] = useState(false);
+  const [clinicalSummary, setClinicalSummary] = useState<ClinicalFilterSummary | null>(null);
+  const [isLoadingSummary, setIsLoadingSummary] = useState(false);
+
+  const handleOpenClinicalSummary = async () => {
+    setIsLoadingSummary(true);
+    setShowSummaryModal(true);
+    try {
+      const summary = await clinicalStore.getClinicalSummaryFilter(activeMemberId);
+      setClinicalSummary(summary);
+    } catch {
+      setClinicalSummary(clinicalStore.buildClinicalSummary(activeMember));
+    } finally {
+      setIsLoadingSummary(false);
+    }
+  };
 
   // Health Profile State (User Editable with pen icons)
   const [profile, setProfile] = useState<PatientHealthProfile>(clinicalStore.getHealthProfile());
@@ -835,11 +852,12 @@ IIIT Delhi Medical Centre Central Registry
 
             <button
               type="button"
-              onClick={() => window.print()}
-              className="px-3 py-1.5 rounded-xl bg-surface hover:bg-surface/80 text-text-main border border-border text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-xs"
+              onClick={handleOpenClinicalSummary}
+              className="px-3.5 py-1.5 rounded-xl bg-brand-primary text-white hover:bg-brand-primary/90 border border-brand-primary text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-xs"
+              title="Print AI Filtered Clinical Summary Sheet"
             >
-              <Printer className="w-3.5 h-3.5" />
-              <span>{language === "hi" ? "प्रिंट" : "Print"}</span>
+              <Printer className="w-3.5 h-3.5 text-white" />
+              <span>{language === "hi" ? "संक्षिप्त सारांश प्रिंट करें" : "Print Filtered Summary"}</span>
             </button>
           </div>
         </div>
@@ -2009,11 +2027,20 @@ IIIT Delhi Medical Centre Central Registry
               <button
                 type="button"
                 onClick={handleGenerateNewCode}
-                className="px-4 py-2 rounded-xl bg-brand-primary hover:bg-brand-primary/90 text-white text-xs font-semibold transition-colors shadow-sm flex items-center gap-1.5"
+                className="px-4 py-2 rounded-xl bg-surface hover:bg-surface/80 border border-border text-text-main text-xs font-semibold transition-colors shadow-xs flex items-center gap-1.5"
               >
                 <RefreshCw className="w-3.5 h-3.5" />
                 <span>Generate New Code</span>
               </button>
+
+              <Link
+                href={`/hospital?code=${accessCode.code}`}
+                target="_blank"
+                className="px-4 py-2 rounded-xl bg-brand-primary hover:bg-brand-primary/90 text-white text-xs font-semibold transition-colors shadow-xs flex items-center gap-1.5"
+              >
+                <ExternalLink className="w-3.5 h-3.5" />
+                <span>{language === "hi" ? "डॉक्टर पोर्टल में खोलें" : "Open in Doctor Portal"}</span>
+              </Link>
             </div>
 
             {codeRenewedMsg && (
@@ -3931,6 +3958,181 @@ IIIT Delhi Medical Centre Central Registry
                 {language === "hi" ? "अपॉइंटमेंट्स में देखें" : "View in My Bookings"}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: AI CLINICAL SUMMARY & PAST RECORD FILTER (OFFICIAL PRINTABLE BRIEFING) */}
+      {showSummaryModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-fade-in">
+          <div className="bg-white rounded-2xl border border-border p-6 max-w-2xl w-full shadow-2xl space-y-4 text-xs max-h-[90vh] overflow-y-auto">
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-border pb-3.5">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-brand-primary text-white flex items-center justify-center font-bold text-xs shadow-xs">
+                  AI
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-text-main">
+                    {language === "hi"
+                      ? "संक्षिप्त मेडिकल सारांश एवं फिल्टर रिकॉर्ड (प्रमाणित)"
+                      : "Official AI Clinical Summary & Filtered Briefing"}
+                  </h3>
+                  <span className="text-[10px] text-emerald-700 font-semibold flex items-center gap-1">
+                    <ShieldCheck className="w-3 h-3 text-emerald-600" />
+                    <span>IIIT Delhi Hospital Clinical Network • Verified Record</span>
+                  </span>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowSummaryModal(false)}
+                className="p-1 rounded text-text-muted hover:text-text-main"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {isLoadingSummary && !clinicalSummary ? (
+              <div className="p-8 text-center text-xs text-text-muted space-y-2">
+                <RefreshCw className="w-6 h-6 animate-spin text-brand-primary mx-auto" />
+                <p>Generating high-yield clinical briefing from full record...</p>
+              </div>
+            ) : clinicalSummary ? (
+              <div className="space-y-4">
+                {/* Patient Demographics & Filter Stats */}
+                <div className="p-3.5 rounded-xl bg-surface border border-border flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <strong className="text-sm text-text-main block">{clinicalSummary.patientName}</strong>
+                    <span className="text-xs text-text-muted font-medium">{clinicalSummary.demographics}</span>
+                  </div>
+                  <span className="text-[11px] font-semibold px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-200">
+                    {clinicalSummary.filterReductionRate}
+                  </span>
+                </div>
+
+                {/* 2-Sentence Plain Language Health Status */}
+                <div className="p-3.5 rounded-xl bg-white border border-border space-y-1.5 shadow-2xs">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-brand-primary">
+                      {language === "hi" ? "स्वास्थ्य स्थिति का सरल सारांश:" : "Executive Plain Language Health Status:"}
+                    </span>
+                    <span className="text-[10px] text-text-muted font-mono">Plain Language NLP</span>
+                  </div>
+                  <p className="text-xs text-text-main leading-relaxed font-medium">
+                    {language === "hi" ? clinicalSummary.plainLanguageSummaryHi : clinicalSummary.plainLanguageSummaryEn}
+                  </p>
+                </div>
+
+                {/* Critical Contraindication Shield (High-Alert Warning) */}
+                <div className="p-3.5 rounded-xl bg-red-50/90 border border-red-200 text-xs space-y-2 shadow-2xs">
+                  <div className="flex items-center gap-1.5 font-bold text-red-900 text-[11px] uppercase tracking-wide">
+                    <AlertTriangle className="w-4 h-4 text-red-600 flex-shrink-0" />
+                    <span>
+                      {language === "hi"
+                        ? "डॉक्टर हेतु महत्वपूर्ण चेतावनी व नुकसानदेह दवाइयाँ (Contraindications):"
+                        : "Critical Contraindications & Prescription Restrictions:"}
+                    </span>
+                  </div>
+                  <ul className="space-y-1 text-red-950 font-medium pl-1">
+                    {clinicalSummary.criticalContraindicationShield.map((alert, idx) => (
+                      <li key={idx} className="flex items-start gap-1.5 text-xs">
+                        <span className="text-red-600 font-bold">•</span>
+                        <span>{alert}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                {/* Filtered Past Organ Diseases Table */}
+                <div className="space-y-2">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-text-muted block">
+                    {language === "hi" ? "अंग अनुसार पुरानी बीमारियाँ (फिल्टर किया गया इतिहास):" : "Longitudinal Past Organ Conditions (High-Yield):"}
+                  </span>
+                  <div className="overflow-x-auto rounded-xl border border-border">
+                    <table className="w-full text-left text-xs">
+                      <thead className="bg-surface text-text-muted text-[10px] uppercase border-b border-border">
+                        <tr>
+                          <th className="p-2.5 font-bold">Organ System</th>
+                          <th className="p-2.5 font-bold">Condition</th>
+                          <th className="p-2.5 font-bold">Year</th>
+                          <th className="p-2.5 font-bold">Status</th>
+                          <th className="p-2.5 font-bold">Key Takeaway / Risk</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-border/60">
+                        {clinicalSummary.filteredOrganHistory.map((item, idx) => (
+                          <tr key={idx} className="hover:bg-surface/30">
+                            <td className="p-2.5 font-semibold text-brand-primary">{item.organSystem}</td>
+                            <td className="p-2.5 font-bold text-text-main">{item.conditionName}</td>
+                            <td className="p-2.5 text-text-muted font-mono">{item.diagnosedYear}</td>
+                            <td className="p-2.5">
+                              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                                {item.status}
+                              </span>
+                            </td>
+                            <td className="p-2.5 text-text-muted text-[11px] leading-relaxed">{item.keyTakeaway}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* Active Medications & Directives */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                  <div className="p-3 rounded-xl bg-surface/50 border border-border space-y-1.5">
+                    <span className="text-[10px] font-bold text-text-muted uppercase">Active Daily Medications</span>
+                    <ul className="space-y-1 text-[11px] text-text-main font-medium">
+                      {clinicalSummary.vitalMedicationsSummary.map((m, idx) => (
+                        <li key={idx} className="flex items-center gap-1.5">
+                          <Pill className="w-3 h-3 text-brand-primary flex-shrink-0" />
+                          <span>{m}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  <div className="p-3 rounded-xl bg-surface/50 border border-border space-y-1.5">
+                    <span className="text-[10px] font-bold text-text-muted uppercase">Clinical Next Steps</span>
+                    <ul className="space-y-1 text-[11px] text-text-main font-medium">
+                      {clinicalSummary.clinicalActionDirectives.map((d, idx) => (
+                        <li key={idx} className="flex items-start gap-1.5">
+                          <CheckCircle2 className="w-3 h-3 text-emerald-600 flex-shrink-0 mt-0.5" />
+                          <span>{d}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+
+                {/* Footer Actions */}
+                <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-border">
+                  <div className="text-[11px] text-text-muted flex items-center gap-1">
+                    <Key className="w-3.5 h-3.5 text-amber-600" />
+                    <span>Dynamic Code: <strong className="font-mono text-brand-primary">{accessCode.code}</strong> (Expires in 15m)</span>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowSummaryModal(false)}
+                      className="px-3.5 py-2 rounded-xl bg-surface hover:bg-surface/80 border border-border text-text-main font-semibold"
+                    >
+                      {language === "hi" ? "बंद करें" : "Close"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => window.print()}
+                      className="px-4 py-2 rounded-xl bg-brand-primary hover:bg-brand-primary/90 text-white font-semibold flex items-center gap-1.5 shadow-xs transition-all"
+                    >
+                      <Printer className="w-3.5 h-3.5" />
+                      <span>{language === "hi" ? "यह सारांश प्रिंट करें" : "Print Official Summary"}</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ) : null}
           </div>
         </div>
       )}

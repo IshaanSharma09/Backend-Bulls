@@ -3,7 +3,6 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { SplineScene } from "../components/SplineScene";
 import { useAuth } from "../lib/authContext";
 import {
   ShieldCheck,
@@ -52,33 +51,22 @@ export default function Home() {
   };
 
   return (
-    <div className="relative isolate min-h-[calc(100vh-8rem)] pb-16 animate-fade-in">
-      {/* Interactive 3D Spline Scene in the Background */}
-      <div className="absolute inset-0 -top-8 -left-4 -right-4 sm:-left-6 sm:-right-6 lg:-left-8 lg:-right-8 h-[680px] sm:h-[780px] overflow-hidden pointer-events-none z-0">
-        <div className="w-full h-full pointer-events-auto">
-          <SplineScene />
+    <div className="relative min-h-[calc(100vh-8rem)] pb-16 animate-fade-in max-w-5xl mx-auto space-y-10 pt-2">
+      {/* Hero Header */}
+      <section className="text-center space-y-3 pt-4 sm:pt-6">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-surface text-brand-primary text-xs font-semibold border border-border shadow-xs">
+          <ShieldCheck className="w-3.5 h-3.5" />
+          <span>Patient-Governed Health Operating System</span>
         </div>
-        {/* Soft gradient fade so the 3D canvas smoothly blends into the page background */}
-        <div className="absolute inset-x-0 bottom-0 h-44 bg-gradient-to-t from-background via-background/70 to-transparent pointer-events-none" />
-      </div>
 
-      {/* Foreground Content */}
-      <div className="relative z-10 max-w-5xl mx-auto space-y-10 pt-2">
-        {/* Hero Header */}
-        <section className="text-center space-y-3 pt-4 sm:pt-6">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-white/90 backdrop-blur-md text-brand-primary text-xs font-semibold border border-border/80 shadow-xs">
-            <ShieldCheck className="w-3.5 h-3.5" />
-            <span>Patient-Governed Health Operating System</span>
-          </div>
+        <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-text-main leading-tight">
+          Med<span className="text-brand-primary">Nexus</span> Healthcare OS
+        </h1>
 
-          <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-text-main leading-tight drop-shadow-xs">
-            Med<span className="text-brand-primary">Nexus</span> Healthcare OS
-          </h1>
-
-          <p className="text-sm text-text-muted max-w-xl mx-auto leading-relaxed bg-white/85 backdrop-blur-md px-4 py-2 rounded-xl border border-border/60 shadow-xs">
-            Clean clinical workflows: Full AI health reports, active medicine dosage schedules, 15-minute dynamic access codes, and hospital Smart Queue vacancy auto-fill.
-          </p>
-        </section>
+        <p className="text-sm text-text-muted max-w-xl mx-auto leading-relaxed bg-surface/60 px-4 py-2 rounded-xl border border-border/60 shadow-xs">
+          Clean clinical workflows: Full AI health reports, active medicine dosage schedules, 15-minute dynamic access codes, and hospital Smart Queue vacancy auto-fill.
+        </p>
+      </section>
 
         {/* Two Clean Portal Entry Cards */}
         <section className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
@@ -290,7 +278,6 @@ export default function Home() {
           </div>
         )}
       </section>
-      </div>
     </div>
   );
 }
