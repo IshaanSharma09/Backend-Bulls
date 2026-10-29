@@ -17,7 +17,7 @@ router = APIRouter(prefix="/api", tags=["hospital-queue"])
 
 @router.get("/hospital/HOSP-01/queue", response_model=QueueResponse)
 @router.get("/b2b/queue", response_model=QueueResponse)
-def get_iiitd_hospital_queue(
+def get_hospital_queue(
     hub_hospital_id: Optional[str] = Query("HOSP-01"),
     db: Session = Depends(get_db)
 ):

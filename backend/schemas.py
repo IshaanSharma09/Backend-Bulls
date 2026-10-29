@@ -88,7 +88,7 @@ class UpdateLabFileRequest(BaseModel):
     notes: Optional[str] = None
 
 
-# ---------------- 3. IIIT Delhi Hospital Queue Schemas ----------------
+# ---------------- 3. Hospital Queue Schemas ----------------
 class QueueSlotItem(BaseModel):
     id: str
     hospitalId: str

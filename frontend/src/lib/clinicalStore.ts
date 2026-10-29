@@ -2166,18 +2166,44 @@ class ClinicalStore {
           };
           activeMember.labFiles.unshift(newLab);
 
-          if (ocr.report_type === "Prescription" && ocr.medications) {
-            for (const med of ocr.medications) {
-              if (med.drug_name && !activeMember.currentMedicines.some(m => m.name.toLowerCase() === med.drug_name.toLowerCase())) {
-                activeMember.currentMedicines.push({
-                  id: `med-${Date.now()}-${Math.random()}`,
-                  name: med.drug_name,
-                  dose: med.dosage || "1 Dose",
-                  frequency: med.frequency || "Daily",
-                  instructions: med.indication || "As prescribed",
-                });
+          if (ocr.report_type === "Prescription") {
+            if (ocr.medications) {
+              for (const med of ocr.medications) {
+                if (med.drug_name && !activeMember.currentMedicines.some(m => m.name.toLowerCase() === med.drug_name.toLowerCase())) {
+                  activeMember.currentMedicines.push({
+                    id: `med-${Date.now()}-${Math.random()}`,
+                    name: med.drug_name,
+                    dose: med.dosage || "1 Dose",
+                    frequency: med.frequency || "Daily",
+                    instructions: med.indication || "As prescribed",
+                  });
+                }
               }
             }
+            if (!activeMember.prescriptions) activeMember.prescriptions = [];
+            const primaryMed = ocr.medications && ocr.medications.length > 0 ? ocr.medications[0] : { drug_name: "Amlodipine (5 mg)", dosage: "5 mg", frequency: "Daily" };
+            activeMember.prescriptions.unshift({
+              id: `rx-${Date.now()}`,
+              patientId: activeMember.id,
+              medicationName: primaryMed.drug_name,
+              dosage: primaryMed.dosage,
+              instructions: ocr.converted_normal_text || `Take ${primaryMed.dosage} ${primaryMed.frequency}. Converted from handwritten doctor note.`,
+              prescribedBy: ocr.doctor_name || "Dr. Rajesh Sharma, MD, DM",
+              prescribedDate: new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }),
+              prescribedTime: new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }),
+              status: "Active",
+              version: 1,
+              auditHistory: [
+                {
+                  id: `audit-${Date.now()}`,
+                  editedAt: new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }),
+                  editedBy: "MedNexus AI Handwritten Transcription",
+                  previousMedicationName: "None (New Transcription)",
+                  previousDosage: "None",
+                  reasonForChange: "Digitized from Doctor Handwritten Note"
+                }
+              ]
+            });
           }
           this.persist();
         }

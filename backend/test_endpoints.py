@@ -8,7 +8,7 @@ client = TestClient(app)
 
 def run_tests():
     print("=" * 65)
-    print("MEDNEXUS IIIT DELHI HOSPITAL OS - AUTOMATED ENDPOINT VERIFICATION")
+    print("MEDNEXUS HOSPITAL OS - AUTOMATED ENDPOINT VERIFICATION")
     print("=" * 65)
 
     # ---------------- 1. PATIENT CONSENT & DYNAMIC ACCESS CODE ----------------
@@ -100,7 +100,7 @@ def run_tests():
     assert safe_data["safety_status"] == "SAFE_TO_PRESCRIBE"
     assert safe_data["allergy_detected"] is None
 
-    # ---------------- 4. IIIT DELHI HOSPITAL SMART QUEUE ----------------
+    # ---------------- 4. HOSPITAL SMART QUEUE ----------------
     print("
 --- 4.1: GET /api/hospital/HOSP-01/queue ---")
     resp_queue = client.get("/api/hospital/HOSP-01/queue")

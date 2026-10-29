@@ -34,7 +34,7 @@ def seed_database():
 
     try:
         print("[Seed] Seeding Hospitals...")
-        h_iiitd = Hospital(
+        h_hosp = Hospital(
             hospital_id="HOSP-01",
             hospital_code="HOSP",
             name="Hospital",
@@ -58,13 +58,13 @@ def seed_database():
             state="Bihar",
             review_count=4,
         )
-        db.add_all([h_iiitd, h_apex, h_purnia])
+        db.add_all([h_hosp, h_apex, h_purnia])
         db.commit()
 
         print("[Seed] Seeding Hospital Reviews...")
         for i in range(1, 7):
             db.add(HospitalReview(
-                id=f"rev_iiitd_{i}",
+                id=f"rev_hosp_{i}",
                 hospital_id="HOSP-01",
                 doctor_hash=compute_nmc_hash(f"HOSP-DOC-{i}"),
                 department="Cardiology" if i % 2 == 0 else "Emergency Medicine",
@@ -114,7 +114,7 @@ def seed_database():
             doctor_id="doc_u8f93a12",
             hospital_id="HOSP-01",
             name="Dr. Rajesh Sharma",
-            email="rajesh.sharma@iiitd.ac.in",
+            email="rajesh.sharma@hospital.org",
             specialty="Cardiology",
             degree="DM Cardiology",
             years_experience=8,
