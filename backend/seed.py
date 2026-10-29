@@ -35,9 +35,9 @@ def seed_database():
     try:
         print("[Seed] Seeding Hospitals...")
         h_iiitd = Hospital(
-            hospital_id="HOSP-IIITD",
-            hospital_code="IIITD",
-            name="IIIT Delhi Hospital",
+            hospital_id="HOSP-01",
+            hospital_code="HOSP",
+            name="Hospital",
             city="New Delhi",
             state="Delhi",
             review_count=6,
@@ -65,8 +65,8 @@ def seed_database():
         for i in range(1, 7):
             db.add(HospitalReview(
                 id=f"rev_iiitd_{i}",
-                hospital_id="HOSP-IIITD",
-                doctor_hash=compute_nmc_hash(f"IIITD-DOC-{i}"),
+                hospital_id="HOSP-01",
+                doctor_hash=compute_nmc_hash(f"HOSP-DOC-{i}"),
                 department="Cardiology" if i % 2 == 0 else "Emergency Medicine",
                 workload_rating=2.4 if i == 1 else 3.5,
                 safety_rating=4.8,
@@ -112,7 +112,7 @@ def seed_database():
         print("[Seed] Seeding Doctors...")
         d1 = Doctor(
             doctor_id="doc_u8f93a12",
-            hospital_id="HOSP-IIITD",
+            hospital_id="HOSP-01",
             name="Dr. Rajesh Sharma",
             email="rajesh.sharma@iiitd.ac.in",
             specialty="Cardiology",
@@ -175,10 +175,10 @@ def seed_database():
         db.add(code_record)
         db.commit()
 
-        print("[Seed] Seeding IIIT Delhi Hospital Queue Slots & Waiting Patients...")
+        print("[Seed] Seeding Hospital Queue Slots & Waiting Patients...")
         q1 = HospitalQueueSlot(
             id="q-1",
-            hospital_id="HOSP-IIITD",
+            hospital_id="HOSP-01",
             slot_time="09:30 AM",
             patient_id="PAT-0912",
             patient_name="Ramesh Kumar",
@@ -186,13 +186,13 @@ def seed_database():
             gender="Male",
             severity="Emergency",
             status="Confirmed",
-            referring_spoke="IIITD Rural Health Extension",
+            referring_spoke="HOSP Rural Health Extension",
             attending_doctor="Dr. Rajesh Sharma (DM Cardiology)",
             notes="Post-STEMI stabilization.",
         )
         q2 = HospitalQueueSlot(
             id="q-2",
-            hospital_id="HOSP-IIITD",
+            hospital_id="HOSP-01",
             slot_time="10:15 AM",
             patient_id="",
             patient_name="Cancelled by Patient",
@@ -206,7 +206,7 @@ def seed_database():
         )
         w1 = WaitingPatient(
             id="WAIT-01",
-            hospital_id="HOSP-IIITD",
+            hospital_id="HOSP-01",
             name="Sunita Verma",
             age=42,
             gender="Female",

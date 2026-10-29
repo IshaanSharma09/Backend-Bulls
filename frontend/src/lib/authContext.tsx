@@ -32,7 +32,7 @@ export interface AuthContextType {
   loginAsDoctorHospital: (hospitalCode: string, doctorEmail: string, pass: string) => boolean;
   quickLoginPatient: () => void;
   quickLoginDoctor: () => void;
-  quickLoginDoctorIIITD: () => void;
+  quickLoginDoctorHospital: () => void;
   logout: () => void;
 }
 
@@ -43,16 +43,16 @@ const DEFAULT_PATIENT: PatientUser = {
   abhaId: "91-8273-1928-3920",
   age: 54,
   gender: "Male",
-  primaryClinic: "IIIT Delhi Health Centre",
+  primaryClinic: "Hospital Health Centre",
 };
 
-export const IIIT_DELHI_DOCTOR: DoctorHospitalUser = {
-  doctorId: "DOC-IIITD-01",
+export const HOSPITAL_DOCTOR: DoctorHospitalUser = {
+  doctorId: "DOC-HOSP-01",
   doctorName: "Dr. Rajesh Sharma",
   specialty: "Chief Medical Officer & Cardiology",
-  hospitalId: "HOSP-IIITD",
-  hospitalName: "IIIT Delhi Hospital",
-  email: "dr.sharma@hospital.iiitd.ac.in",
+  hospitalId: "HOSP-01",
+  hospitalName: "Hospital",
+  email: "dr.sharma@hospital.care",
 };
 
 const AuthContext = createContext<AuthContextType>({
@@ -63,7 +63,7 @@ const AuthContext = createContext<AuthContextType>({
   loginAsDoctorHospital: () => false,
   quickLoginPatient: () => {},
   quickLoginDoctor: () => {},
-  quickLoginDoctorIIITD: () => {},
+  quickLoginDoctorHospital: () => {},
   logout: () => {},
 });
 
@@ -85,7 +85,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setDoctorHospitalUser(null);
       } else if (savedRole === "doctor_hospital") {
         setRole("doctor_hospital");
-        setDoctorHospitalUser(savedDocHosp ? JSON.parse(savedDocHosp) : IIIT_DELHI_DOCTOR);
+        setDoctorHospitalUser(savedDocHosp ? JSON.parse(savedDocHosp) : HOSPITAL_DOCTOR);
         setPatientUser(null);
       }
     } catch {
@@ -112,8 +112,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     pass: string
   ): boolean => {
     const d: DoctorHospitalUser = {
-      ...IIIT_DELHI_DOCTOR,
-      email: doctorEmail || IIIT_DELHI_DOCTOR.email,
+      ...HOSPITAL_DOCTOR,
+      email: doctorEmail || HOSPITAL_DOCTOR.email,
     };
     setRole("doctor_hospital");
     setDoctorHospitalUser(d);
@@ -131,7 +131,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const quickLoginDoctor = () => {
-    loginAsDoctorHospital("IIITD-HOSP", "dr.sharma@hospital.iiitd.ac.in", "doctor123");
+    loginAsDoctorHospital("HOSP-01", "dr.sharma@hospital.care", "doctor123");
   };
 
   const logout = () => {
@@ -155,7 +155,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         loginAsDoctorHospital,
         quickLoginPatient,
         quickLoginDoctor,
-        quickLoginDoctorIIITD: quickLoginDoctor,
+        quickLoginDoctorHospital: quickLoginDoctor,
         logout,
       }}
     >

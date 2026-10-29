@@ -61,12 +61,12 @@ function DoctorHospitalDashboardContent() {
   // Active Tab state: only 3 clean tabs
   const [activeTab, setActiveTab] = useState<"queue" | "search" | "roster">("queue");
 
-  const currentHospitalId = "HOSP-IIITD";
-  const currentHospitalName = "IIIT Delhi Hospital";
+  const currentHospitalId = "HOSP-01";
+  const currentHospitalName = "Hospital";
   const currentDoctorName = doctorHospitalUser?.doctorName || "Dr. Rajesh Sharma";
   const currentDoctorSpecialty = doctorHospitalUser?.specialty || "Chief Medical Officer & Cardiology";
 
-  // Data State for IIIT Delhi Hospital
+  // Data State for Hospital
   const [queueSlots, setQueueSlots] = useState<HospitalQueueSlot[]>([]);
   const [waitingPatients, setWaitingPatients] = useState<WaitingEarlyArrivalPatient[]>([]);
   const [hospitalPatients, setHospitalPatients] = useState<HospitalPatient[]>([]);
@@ -369,7 +369,7 @@ function DoctorHospitalDashboardContent() {
 
     if (file.isPhiScrubbed) {
       const scrubbedContent = `================================================================================
-IIIT DELHI HOSPITAL & RESEARCH MEDICAL CENTRE
+HOSPITAL OPD & RESEARCH MEDICAL CENTRE
 DEPARTMENT OF CLINICAL PATHOLOGY & CENTRAL DIAGNOSTIC ARCHIVE
 Okhla Phase III, Near Govind Puri Metro Station, New Delhi 110020
 Accreditation ID: NABL-DELHI-PATH-90214
@@ -428,7 +428,7 @@ DIAGNOSTIC & PRIVACY INTERPRETATION:
     }
 
     const docContent = `================================================================================
-IIIT DELHI HOSPITAL & RESEARCH MEDICAL CENTRE
+HOSPITAL OPD & RESEARCH MEDICAL CENTRE
 DEPARTMENT OF CLINICAL PATHOLOGY & CENTRAL DIAGNOSTIC ARCHIVE
 Okhla Phase III, Near Govind Puri Metro Station, New Delhi 110020
 ================================================================================
@@ -473,19 +473,19 @@ DIAGNOSTIC INTERPRETATION:
 
   return (
     <div className="space-y-6 pb-16 animate-fade-in max-w-5xl mx-auto">
-      {/* Top Banner: IIIT Delhi Hospital Header */}
+      {/* Top Banner: Hospital Header */}
       <div className="bg-white rounded-2xl border border-border p-5 sm:p-6 shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="space-y-1">
             <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-surface text-brand-primary text-xs font-semibold">
               <Building2 className="w-3.5 h-3.5" />
-              <span>IIIT Delhi Medical Centre</span>
+              <span>Hospital Medical Centre</span>
             </div>
             <h1 className="text-xl sm:text-2xl font-bold text-text-main">
               {currentHospitalName} & Clinician OS
             </h1>
             <p className="text-xs text-text-muted">
-              Attending Clinician: <strong className="text-text-main">{currentDoctorName}</strong> ({currentDoctorSpecialty}) | Facility ID: <span className="font-mono text-brand-primary">HOSP-IIITD</span>
+              Attending Clinician: <strong className="text-text-main">{currentDoctorName}</strong> ({currentDoctorSpecialty}) | Facility ID: <span className="font-mono text-brand-primary">HOSP-01</span>
             </p>
           </div>
 
@@ -548,7 +548,7 @@ DIAGNOSTIC INTERPRETATION:
           }`}
         >
           <Users className="w-4 h-4" />
-          <span>Hospital Patients & Clinicians (IIIT Delhi)</span>
+          <span>Hospital Patients & Clinicians (Hospital)</span>
         </button>
       </div>
 
@@ -811,7 +811,7 @@ DIAGNOSTIC INTERPRETATION:
               Search Patient (By 15-Minute Dynamic Code)
             </h2>
             <p className="text-xs text-text-muted mt-1 leading-relaxed">
-              To protect patient privacy, health records at IIIT Delhi Hospital can only be unlocked with the patient&apos;s live 15-minute consent code. Doctors cannot view historical records without patient authorization.
+              To protect patient privacy, health records at Hospital can only be unlocked with the patient&apos;s live 15-minute consent code. Doctors cannot view historical records without patient authorization.
             </p>
           </div>
 
@@ -1341,15 +1341,15 @@ DIAGNOSTIC INTERPRETATION:
         </div>
       )}
 
-      {/* TAB 3: HOSPITAL PATIENTS & CLINICIANS (IIIT DELHI HOSPITAL) */}
+      {/* TAB 3: HOSPITAL PATIENTS & CLINICIANS (HOSPITAL) */}
       {activeTab === "roster" && (
         <div className="bg-white rounded-2xl border border-border p-6 shadow-sm space-y-6 animate-fade-in">
           <div>
             <h2 className="text-base font-bold text-text-main">
-              Hospital Patients & Attending Clinicians (IIIT Delhi Hospital)
+              Hospital Patients & Attending Clinicians (Hospital)
             </h2>
             <p className="text-xs text-text-muted mt-1 leading-relaxed">
-              Clinical registry for admitted patients and consulting doctors at IIIT Delhi Medical Centre. Status updates persist in real time.
+              Clinical registry for admitted patients and consulting doctors at Hospital Medical Centre. Status updates persist in real time.
             </p>
           </div>
 
@@ -1405,7 +1405,7 @@ DIAGNOSTIC INTERPRETATION:
           <div className="pt-4 border-t border-border space-y-3">
             <span className="text-xs font-bold uppercase tracking-wider text-text-muted flex items-center gap-1.5">
               <Stethoscope className="w-3.5 h-3.5 text-brand-primary" />
-              <span>Attending Medical Specialists (IIIT Delhi Hospital)</span>
+              <span>Attending Medical Specialists (Hospital)</span>
             </span>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -1811,7 +1811,7 @@ DIAGNOSTIC INTERPRETATION:
                   </div>
                   <div className="text-[10px] text-emerald-700 flex items-center justify-between">
                     <span>Regular Sinus Rhythm, Normal Axis, No ST elevation</span>
-                    <span>Verified on IIIT Delhi Central Archive</span>
+                    <span>Verified on Hospital Central Archive</span>
                   </div>
                 </div>
               ) : viewingLabFile.isPhiScrubbed ? (
@@ -1857,7 +1857,7 @@ DIAGNOSTIC INTERPRETATION:
                 <div className="p-4 rounded-xl border border-dashed border-border bg-surface/30 text-center space-y-2">
                   <FileText className="w-8 h-8 text-brand-primary mx-auto opacity-70" />
                   <div className="text-[11px] font-semibold text-text-main">{viewingLabFile.name}</div>
-                  <div className="text-[10px] text-text-muted">Digital Diagnostic Record • Verified on IIIT Delhi Medical Archive</div>
+                  <div className="text-[10px] text-text-muted">Digital Diagnostic Record • Verified on Hospital Medical Archive</div>
                 </div>
               )}
             </div>
@@ -1866,7 +1866,7 @@ DIAGNOSTIC INTERPRETATION:
             <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-border text-[11px] text-text-muted">
               <div className="flex items-center gap-1.5">
                 <ShieldCheck className="w-4 h-4 text-emerald-600" />
-                <span>Verified by <strong>IIIT Delhi Hospital Pathology</strong></span>
+                <span>Verified by <strong>Hospital Pathology</strong></span>
               </div>
               <div className="flex items-center gap-2">
                 <button

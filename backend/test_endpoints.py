@@ -102,23 +102,23 @@ def run_tests():
 
     # ---------------- 4. IIIT DELHI HOSPITAL SMART QUEUE ----------------
     print("
---- 4.1: GET /api/hospital/HOSP-IIITD/queue ---")
-    resp_queue = client.get("/api/hospital/HOSP-IIITD/queue")
+--- 4.1: GET /api/hospital/HOSP-01/queue ---")
+    resp_queue = client.get("/api/hospital/HOSP-01/queue")
     assert resp_queue.status_code == 200
     q_data = resp_queue.json()
-    print(f"HOSP-IIITD Queue slots: {len(q_data['queue'])}, Waiting patients: {len(q_data['waiting_patients'])}")
+    print(f"HOSP-01 Queue slots: {len(q_data['queue'])}, Waiting patients: {len(q_data['waiting_patients'])}")
     assert len(q_data["queue"]) >= 2
     assert len(q_data["waiting_patients"]) >= 1
 
     print("
---- 4.2: POST /api/hospital/HOSP-IIITD/queue/{slot_id}/cancel ---")
-    resp_cancel = client.post("/api/hospital/HOSP-IIITD/queue/q-1/cancel")
+--- 4.2: POST /api/hospital/HOSP-01/queue/{slot_id}/cancel ---")
+    resp_cancel = client.post("/api/hospital/HOSP-01/queue/q-1/cancel")
     assert resp_cancel.status_code == 200
     print("Cancel slot response:", resp_cancel.json())
     assert resp_cancel.json()["status"] == "vacated"
 
     print("
---- 4.3: POST /api/hospital/HOSP-IIITD/queue/{slot_id}/reallocate ---")
+--- 4.3: POST /api/hospital/HOSP-01/queue/{slot_id}/reallocate ---")
     realloc_payload = {
         "slot_id": "q-2",
         "patient_name": "Sunita Verma",
@@ -126,14 +126,14 @@ def run_tests():
         "gender": "Female",
         "reason": "Recurrent palpitations and acute chest tightness"
     }
-    resp_realloc = client.post("/api/hospital/HOSP-IIITD/queue/q-2/reallocate", json=realloc_payload)
+    resp_realloc = client.post("/api/hospital/HOSP-01/queue/q-2/reallocate", json=realloc_payload)
     assert resp_realloc.status_code == 200
     print("Reallocate slot response:", resp_realloc.json())
     assert resp_realloc.json()["status"] == "reallocated"
 
     print("
---- 4.4: PUT /api/hospital/HOSP-IIITD/patients/{patient_id}/status ---")
-    resp_status = client.put("/api/hospital/HOSP-IIITD/patients/RAMESH-54/status", json={"status": "In Consultation"})
+--- 4.4: PUT /api/hospital/HOSP-01/patients/{patient_id}/status ---")
+    resp_status = client.put("/api/hospital/HOSP-01/patients/RAMESH-54/status", json={"status": "In Consultation"})
     assert resp_status.status_code == 200
     print("Patient status update response:", resp_status.json())
     assert resp_status.json()["new_status"] == "In Consultation"
@@ -175,9 +175,9 @@ def run_tests():
     resp_hosps = client.get("/api/hospitals")
     assert resp_hosps.status_code == 200
     h_map = {h["hospital_id"]: h for h in resp_hosps.json()["hospitals"]}
-    assert h_map["HOSP-IIITD"]["is_unlocked"] is True
+    assert h_map["HOSP-01"]["is_unlocked"] is True
     assert h_map["hosp_district_purnia"]["is_unlocked"] is False
-    print("IIITD Hospital Unlocked:", h_map["HOSP-IIITD"]["is_unlocked"])
+    print("HOSP Hospital Unlocked:", h_map["HOSP-01"]["is_unlocked"])
     print("Purnia Hospital Locked (k=5):", h_map["hosp_district_purnia"]["is_unlocked"])
 
     print("

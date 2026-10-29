@@ -66,7 +66,7 @@ export default function DoctorConsultationPage() {
       sender: "Dr_Pulse_9482 (DM Cardiology)",
       role: "Metro Interventional Cardiologist",
       time: "15:37",
-      text: "Crucial catch. Give Aspirin 325mg chewable plus Clopidogrel 300mg immediately as loading dose (antiplatelet mechanism, not NSAID). Withhold Nitrates because systolic BP is 90. Start IV normal saline bolus and transfer to IIIT Delhi Hospital. Cath lab is pre-notified.",
+      text: "Crucial catch. Give Aspirin 325mg chewable plus Clopidogrel 300mg immediately as loading dose (antiplatelet mechanism, not NSAID). Withhold Nitrates because systolic BP is 90. Start IV normal saline bolus and transfer to Hospital. Cath lab is pre-notified.",
       isMe: false,
     },
   ]);
@@ -148,7 +148,7 @@ export default function DoctorConsultationPage() {
       patientId: "RAMESH-54",
       medicationName: rxMedicine,
       dosage: rxDosage,
-      prescribedBy: "Dr. Rajesh Sharma (DM Cardiology, IIIT Delhi Hospital)",
+      prescribedBy: "Dr. Rajesh Sharma (DM Cardiology, Hospital)",
     });
 
     const rxMsg: ChatMessage = {

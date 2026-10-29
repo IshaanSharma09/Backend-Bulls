@@ -58,7 +58,7 @@ def verify_nmc(payload: VerifyNmcRequest, db: Session = Depends(get_db)):
 
     doctor = Doctor(
         doctor_id=doc_id,
-        hospital_id="HOSP-IIITD",
+        hospital_id="HOSP-01",
         name=payload.doctor_name,
         email=f"{payload.doctor_name.lower().replace(' ', '.')}@iiitd.ac.in",
         specialty=payload.specialty,

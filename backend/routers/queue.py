@@ -15,10 +15,10 @@ from schemas import (
 router = APIRouter(prefix="/api", tags=["hospital-queue"])
 
 
-@router.get("/hospital/HOSP-IIITD/queue", response_model=QueueResponse)
+@router.get("/hospital/HOSP-01/queue", response_model=QueueResponse)
 @router.get("/b2b/queue", response_model=QueueResponse)
 def get_iiitd_hospital_queue(
-    hub_hospital_id: Optional[str] = Query("HOSP-IIITD"),
+    hub_hospital_id: Optional[str] = Query("HOSP-01"),
     db: Session = Depends(get_db)
 ):
     slots = db.query(HospitalQueueSlot).order_by(HospitalQueueSlot.slot_time.asc()).all()
@@ -63,7 +63,7 @@ def get_iiitd_hospital_queue(
     )
 
 
-@router.post("/hospital/HOSP-IIITD/queue/{slot_id}/cancel")
+@router.post("/hospital/HOSP-01/queue/{slot_id}/cancel")
 def cancel_queue_slot(slot_id: str, db: Session = Depends(get_db)):
     slot = db.query(HospitalQueueSlot).filter(HospitalQueueSlot.id == slot_id).first()
     if not slot:
@@ -80,7 +80,7 @@ def cancel_queue_slot(slot_id: str, db: Session = Depends(get_db)):
     return {"status": "vacated", "slot_id": slot_id}
 
 
-@router.post("/hospital/HOSP-IIITD/queue/{slot_id}/reallocate")
+@router.post("/hospital/HOSP-01/queue/{slot_id}/reallocate")
 def reallocate_queue_slot(
     slot_id: str,
     payload: ReallocateSlotRequest,
@@ -110,7 +110,7 @@ def reallocate_queue_slot(
     }
 
 
-@router.put("/hospital/HOSP-IIITD/patients/{patient_id}/status")
+@router.put("/hospital/HOSP-01/patients/{patient_id}/status")
 def update_patient_status(
     patient_id: str,
     payload: PatientStatusUpdateRequest,

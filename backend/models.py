@@ -89,7 +89,7 @@ class HospitalQueueSlot(Base):
     __tablename__ = "hospital_queue"
 
     id = Column(String, primary_key=True, index=True)
-    hospital_id = Column(String, nullable=False, default="HOSP-IIITD", index=True)
+    hospital_id = Column(String, nullable=False, default="HOSP-01", index=True)
     slot_time = Column(String, nullable=False)
     patient_id = Column(String, default="")
     patient_name = Column(String, nullable=False)
@@ -106,7 +106,7 @@ class WaitingPatient(Base):
     __tablename__ = "waiting_patients"
 
     id = Column(String, primary_key=True, index=True)
-    hospital_id = Column(String, nullable=False, default="HOSP-IIITD", index=True)
+    hospital_id = Column(String, nullable=False, default="HOSP-01", index=True)
     name = Column(String, nullable=False)
     age = Column(Integer, nullable=False)
     gender = Column(String, nullable=False)

@@ -22,7 +22,7 @@ finally:
     db.close()
 
 app = FastAPI(
-    title="MedNexus Core Backend — IIIT Delhi Hospital OS",
+    title="MedNexus Core Backend — Hospital OS",
     description="Rural-to-Metro Clinical OS, Verified Pseudonymous Network & Dynamic Smart Queue",
     version="3.0.0",
 )
@@ -49,7 +49,7 @@ def root():
     return {
         "status": "online",
         "service": "MedNexus Core Backend",
-        "hospital": "IIIT Delhi Hospital (HOSP-IIITD)",
+        "hospital": "Hospital (HOSP-01)",
         "version": "3.0.0",
         "port": 8000,
         "docs_url": "/docs"
@@ -60,7 +60,7 @@ def root():
 def health_check():
     return {
         "status": "healthy",
-        "hospital_id": "HOSP-IIITD",
+        "hospital_id": "HOSP-01",
         "database": "connected"
     }
 

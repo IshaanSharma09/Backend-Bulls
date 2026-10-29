@@ -65,14 +65,32 @@ function PatientDashboardContent() {
   const { patientUser } = useAuth();
   const searchParams = useSearchParams();
 
-  // Active Tab state: 6 clean tabs
-  const [activeTab, setActiveTab] = useState<"organ" | "doctor" | "appointments" | "prescriptions" | "report" | "code">("organ");
+  const [isMounted, setIsMounted] = useState(false);
+
+  // Active Tab state: Includes prominent OCR and Privacy Shield tabs
+  const [activeTab, setActiveTab] = useState<"organ" | "ocr" | "code" | "prescriptions" | "report" | "doctor" | "appointments">("organ");
   const [language, setLanguage] = useState<"en" | "hi">("en");
 
-  // Family Member Management State (Single Phone Account)
-  const [familyMembers, setFamilyMembers] = useState<FamilyMemberProfile[]>(clinicalStore.getFamilyMembers());
-  const [activeMemberId, setActiveMemberId] = useState<string>(clinicalStore.getActiveMemberId());
-  const [activeMember, setActiveMember] = useState<FamilyMemberProfile>(clinicalStore.getActiveFamilyMember());
+  // Family Member Management State (Deterministic SSR matching initial client pass)
+  const defaultMember = clinicalStore.getFamilyMembers()[0] || {
+    id: "FAM-01",
+    relationship: "Self",
+    name: "Ramesh Kumar",
+    age: 54,
+    gender: "Male",
+    bloodGroup: "B+",
+    phone: "+91 98765 43210",
+    allergies: ["Penicillin", "NSAIDs / Ibuprofen"],
+    organConditions: [],
+    currentMedicines: [],
+    prescriptions: [],
+    labFiles: [],
+    accessCode: { patientId: "FAM-01", code: "849201", generatedAt: Date.now(), expiresAt: Date.now() + 900000, isActive: true },
+  };
+
+  const [familyMembers, setFamilyMembers] = useState<FamilyMemberProfile[]>([defaultMember]);
+  const [activeMemberId, setActiveMemberId] = useState<string>("FAM-01");
+  const [activeMember, setActiveMember] = useState<FamilyMemberProfile>(defaultMember);
   const [showAddMemberModal, setShowAddMemberModal] = useState(false);
   const [newMemberName, setNewMemberName] = useState("");
   const [newMemberRel, setNewMemberRel] = useState<FamilyMemberProfile["relationship"]>("Spouse");
@@ -654,7 +672,7 @@ function PatientDashboardContent() {
 
     if (file.isPhiScrubbed) {
       const scrubbedContent = `================================================================================
-IIIT DELHI HOSPITAL & RESEARCH MEDICAL CENTRE
+HOSPITAL OPD & RESEARCH MEDICAL CENTRE
 DEPARTMENT OF CLINICAL PATHOLOGY & CENTRAL DIAGNOSTIC ARCHIVE
 Okhla Phase III, Near Govind Puri Metro Station, New Delhi 110020
 Accreditation ID: NABL-DELHI-PATH-90214
@@ -713,7 +731,7 @@ DIAGNOSTIC & PRIVACY INTERPRETATION:
     }
 
     const docContent = `================================================================================
-IIIT DELHI HOSPITAL & RESEARCH MEDICAL CENTRE
+HOSPITAL OPD & RESEARCH MEDICAL CENTRE
 DEPARTMENT OF CLINICAL PATHOLOGY & CENTRAL DIAGNOSTIC ARCHIVE
 Okhla Phase III, Near Govind Puri Metro Station, New Delhi 110020
 ================================================================================
@@ -753,10 +771,10 @@ DIAGNOSTIC INTERPRETATION:
 
   const handleDownloadPrescriptionSlip = (rx: DigitalPrescription) => {
     const docContent = `================================================================================
-IIIT DELHI HOSPITAL & RESEARCH MEDICAL CENTRE
+HOSPITAL OPD & RESEARCH MEDICAL CENTRE
 DEPARTMENT OF CLINICAL PHARMACOLOGY & OUTPATIENT SERVICES
 Okhla Phase III, Near Govind Puri Metro Station, New Delhi 110020
-NMC Recognition ID: IIITD-HOSP-CENTRAL-2026
+NMC Recognition ID: HOSP-CENTRAL-2026
 ================================================================================
 
 OFFICIAL DIGITAL CLINICAL PRESCRIPTION
@@ -786,7 +804,7 @@ PATIENT SAFETY VERIFICATION:
 
 ATTENDING CLINICIAN SIGNATURE:
 Digitally Authorized by ${rx.prescribedBy}
-IIIT Delhi Medical Centre Central Registry
+Hospital Medical Centre Central Registry
 ================================================================================`;
 
     const blob = new Blob([docContent], { type: "text/plain;charset=utf-8" });
@@ -870,7 +888,7 @@ IIIT Delhi Medical Centre Central Registry
               <h2 className="text-sm font-bold text-text-main mt-0.5 flex flex-wrap items-center gap-2">
                 <span>Kisan Parivar Household Circle</span>
                 <span className="text-text-muted text-xs font-normal">
-                  • {language === "hi" ? "सक्रिय व्यक्ति:" : "Viewing:"} <strong className="text-brand-primary font-semibold">{activeMember.name}</strong> ({activeMember.relationship}, {activeMember.age}y)
+                  • {language === "hi" ? "सक्रिय व्यक्ति:" : "Viewing:"} <strong className="text-brand-primary font-semibold" suppressHydrationWarning>{isMounted ? activeMember.name : "Ramesh Kumar"}</strong> ({activeMember.relationship}, {activeMember.age}y)
                 </span>
               </h2>
             </div>
@@ -976,8 +994,86 @@ IIIT Delhi Medical Centre Central Registry
         )}
       </div>
 
-      {/* SIX CLEAN TABS */}
+      
+      {/* QUICK HIGHLIGHT ACTION BAR (OCR, PRIVACY SHIELD, PRINT BRIEFING) */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <button
+          type="button"
+          onClick={() => setActiveTab("ocr")}
+          className={`p-3.5 rounded-2xl border text-left transition-all flex items-center justify-between shadow-xs ${
+            activeTab === "ocr"
+              ? "bg-brand-primary text-white border-brand-primary"
+              : "bg-white text-text-main border-border hover:border-brand-primary/40"
+          }`}
+        >
+          <div className="flex items-center gap-2.5">
+            <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${activeTab === "ocr" ? "bg-white/20 text-white" : "bg-blue-50 text-blue-700"}`}>
+              <Sparkles className="w-4 h-4" />
+            </div>
+            <div>
+              <div className="text-xs font-bold">Upload & Scan (OCR)</div>
+              <div className="text-[10px] opacity-80">Prescriptions, Blood Tests, X-Rays</div>
+            </div>
+          </div>
+          <span className="text-[9px] font-extrabold px-1.5 py-0.5 rounded bg-amber-400 text-amber-950">AI OCR</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab("code")}
+          className={`p-3.5 rounded-2xl border text-left transition-all flex items-center justify-between shadow-xs ${
+            activeTab === "code"
+              ? "bg-brand-primary text-white border-brand-primary"
+              : "bg-white text-text-main border-border hover:border-brand-primary/40"
+          }`}
+        >
+          <div className="flex items-center gap-2.5">
+            <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${activeTab === "code" ? "bg-white/20 text-white" : "bg-emerald-50 text-emerald-700"}`}>
+              <Lock className="w-4 h-4" />
+            </div>
+            <div>
+              <div className="text-xs font-bold">Privacy Shield & Safe Code</div>
+              <div className="text-[10px] opacity-80">Mask Private Area from Specialist</div>
+            </div>
+          </div>
+          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800">DPDPA</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={handleOpenClinicalSummary}
+          className="p-3.5 rounded-2xl border border-border bg-white hover:border-brand-primary/40 text-text-main text-left transition-all shadow-xs flex items-center justify-between"
+        >
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-surface text-brand-primary flex items-center justify-center">
+              <Printer className="w-4 h-4" />
+            </div>
+            <div>
+              <div className="text-xs font-bold">Print Filtered Briefing</div>
+              <div className="text-[10px] text-text-muted">30-sec summary in English & Hindi</div>
+            </div>
+          </div>
+          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-surface text-brand-primary">1-Click</span>
+        </button>
+      </div>
+
+      {/* SEVEN CLEAN TABS */}
       <div className="flex flex-wrap items-center gap-1.5 p-1.5 bg-surface rounded-2xl border border-border">
+        
+        <button
+          type="button"
+          onClick={() => setActiveTab("ocr")}
+          className={`flex-1 min-w-[140px] py-2.5 px-3 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-2 ${
+            activeTab === "ocr"
+              ? "bg-white text-brand-primary border border-border shadow-xs"
+              : "text-text-muted hover:text-text-main"
+          }`}
+        >
+          <Sparkles className="w-4 h-4 text-brand-primary" />
+          <span>{language === "hi" ? "दवा व रिपोर्ट OCR" : "AI Document OCR"}</span>
+          <span className="text-[9px] font-extrabold px-1.5 py-0.5 rounded bg-amber-100 text-amber-900 border border-amber-300">NEW</span>
+        </button>
+
         <button
           type="button"
           onClick={() => setActiveTab("organ")}
@@ -2307,7 +2403,7 @@ IIIT Delhi Medical Centre Central Registry
               Your Dynamic Doctor Visit Code
             </h2>
             <p className="text-xs text-text-muted mt-1 leading-relaxed">
-              To protect your medical privacy, doctors at IIIT Delhi Hospital cannot view your health reports without your permission. Share this temporary code with your doctor during your consultation.
+              To protect your medical privacy, doctors at Hospital cannot view your health reports without your permission. Share this temporary code with your doctor during your consultation.
             </p>
           </div>
 
@@ -2392,7 +2488,7 @@ IIIT Delhi Medical Centre Central Registry
                 </h2>
               </div>
               <p className="text-xs text-text-muted mt-1 leading-relaxed">
-                Official digital prescriptions issued by attending clinicians at IIIT Delhi Hospital. Authorized during your consultation via your 15-minute dynamic access code.
+                Official digital prescriptions issued by attending clinicians at Hospital. Authorized during your consultation via your 15-minute dynamic access code.
               </p>
             </div>
 
@@ -3168,7 +3264,7 @@ IIIT Delhi Medical Centre Central Registry
 
                 <div className="bg-white rounded-lg p-3 border border-amber-200 font-mono text-[11px] leading-relaxed text-text-main space-y-2 shadow-xs max-h-96 overflow-y-auto">
                   <div className="text-text-muted text-[10px] border-b border-border pb-1 font-bold">
-                    IIIT DELHI HOSPITAL & RESEARCH MEDICAL CENTRE • NABL-DELHI-PATH-90214
+                    HOSPITAL OPD & RESEARCH MEDICAL CENTRE • NABL-DELHI-PATH-90214
                   </div>
 
                   <div className="space-y-1 text-[11px] pt-1">
@@ -3240,7 +3336,7 @@ IIIT Delhi Medical Centre Central Registry
 
                 <div className="bg-white rounded-lg p-3 border border-emerald-300 font-mono text-[11px] leading-relaxed text-text-main space-y-2 shadow-xs max-h-96 overflow-y-auto">
                   <div className="text-emerald-800 text-[10px] border-b border-border pb-1 font-bold">
-                    IIIT DELHI HOSPITAL & RESEARCH MEDICAL CENTRE • DE-IDENTIFIED CLINICAL ARCHIVE
+                    HOSPITAL OPD & RESEARCH MEDICAL CENTRE • DE-IDENTIFIED CLINICAL ARCHIVE
                   </div>
 
                   <div className="space-y-1 text-[11px] pt-1">
@@ -3661,7 +3757,7 @@ IIIT Delhi Medical Centre Central Registry
                   </div>
                   <div className="text-[10px] text-emerald-700 flex items-center justify-between">
                     <span>Regular Sinus Rhythm, Normal Axis, No ST elevation</span>
-                    <span>Verified on IIIT Delhi Central Archive</span>
+                    <span>Verified on Hospital Central Archive</span>
                   </div>
                 </div>
               ) : viewingFile.isPhiScrubbed ? (
@@ -3707,7 +3803,7 @@ IIIT Delhi Medical Centre Central Registry
                 <div className="p-4 rounded-xl border border-dashed border-border bg-surface/30 text-center space-y-2">
                   <FileText className="w-8 h-8 text-brand-primary mx-auto opacity-70" />
                   <div className="text-[11px] font-semibold text-text-main">{viewingFile.name}</div>
-                  <div className="text-[10px] text-text-muted">Digital Diagnostic Record • Verified on IIIT Delhi Medical Archive</div>
+                  <div className="text-[10px] text-text-muted">Digital Diagnostic Record • Verified on Hospital Medical Archive</div>
                 </div>
               )}
             </div>
@@ -3716,7 +3812,7 @@ IIIT Delhi Medical Centre Central Registry
             <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-border text-[11px] text-text-muted">
               <div className="flex items-center gap-1.5">
                 <ShieldCheck className="w-4 h-4 text-emerald-600" />
-                <span>Verified by <strong>IIIT Delhi Hospital Pathology</strong></span>
+                <span>Verified by <strong>Hospital Pathology</strong></span>
               </div>
               <div className="flex items-center gap-2">
                 <button
@@ -4299,7 +4395,7 @@ IIIT Delhi Medical Centre Central Registry
                   </h3>
                   <span className="text-[10px] text-emerald-700 font-semibold flex items-center gap-1">
                     <ShieldCheck className="w-3 h-3 text-emerald-600" />
-                    <span>IIIT Delhi Hospital Clinical Network • Verified Record</span>
+                    <span>Hospital Clinical Network • Verified Record</span>
                   </span>
                 </div>
               </div>

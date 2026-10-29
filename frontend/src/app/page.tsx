@@ -34,8 +34,8 @@ export default function Home() {
   const [patientIdInput, setPatientIdInput] = useState("RAMESH-54");
   const [patientPassInput, setPatientPassInput] = useState("patient123");
 
-  const [hospitalCodeInput, setHospitalCodeInput] = useState("IIITD-HOSP");
-  const [doctorEmailInput, setDoctorEmailInput] = useState("dr.sharma@hospital.iiitd.ac.in");
+  const [hospitalCodeInput, setHospitalCodeInput] = useState("HOSP-01");
+  const [doctorEmailInput, setDoctorEmailInput] = useState("dr.sharma@hospital.care");
   const [doctorPassInput, setDoctorPassInput] = useState("doctor123");
 
   const handlePatientSubmit = (e: React.FormEvent) => {
@@ -179,7 +179,7 @@ export default function Home() {
               }}
               className="w-full py-3 px-4 rounded-xl bg-brand-primary hover:bg-brand-primary/90 text-white font-semibold text-xs flex items-center justify-center gap-2 transition-all shadow-sm"
             >
-              <span>Launch Hub: IIIT Delhi Hospital (Dr. Rajesh Sharma)</span>
+              <span>Launch Hub: Hospital (Dr. Rajesh Sharma)</span>
               <ArrowRight className="w-4 h-4" />
             </button>
           </div>

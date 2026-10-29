@@ -71,7 +71,7 @@ export function Navbar() {
               }`}
             >
               <Building2 className="w-3.5 h-3.5" />
-              <span>IIIT Delhi Hospital & Doctor Hub</span>
+              <span>Hospital & Doctor Hub</span>
             </Link>
           </div>
         </div>
@@ -90,7 +90,7 @@ export function Navbar() {
               </span>
             ) : role === "doctor_hospital" && doctorHospitalUser ? (
               <span className="font-semibold text-text-main truncate max-w-[220px]">
-                {doctorHospitalUser.doctorName} @ IIIT Delhi Hospital
+                {doctorHospitalUser.doctorName} @ Hospital
               </span>
             ) : (
               <span className="text-text-muted">Select Account</span>
@@ -123,7 +123,7 @@ export function Navbar() {
                 </div>
               </button>
 
-              {/* IIIT Delhi Doctor Option */}
+              {/* Hospital Doctor Option */}
               <button
                 type="button"
                 onClick={() => {
@@ -139,7 +139,7 @@ export function Navbar() {
                 <Stethoscope className="w-4 h-4 text-brand-blue mt-0.5 flex-shrink-0" />
                 <div>
                   <div className="font-bold text-text-main">Dr. Rajesh Sharma (CMO)</div>
-                  <div className="text-[11px] text-text-muted">IIIT Delhi Hospital</div>
+                  <div className="text-[11px] text-text-muted">Hospital</div>
                 </div>
               </button>
             </div>

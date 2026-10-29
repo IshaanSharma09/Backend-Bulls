@@ -2,12 +2,12 @@
 
 import { BACKEND_URL } from "./config";
 
-// Shared Clinical Store for MedNexus (IIIT Delhi Hospital)
+// Shared Clinical Store for MedNexus (Hospital)
 // Supports:
 // 1. Dynamic one-time patient access code (prevents doctor viewing report years later)
 // 2. Crisp, user-editable Health Profile (Allergies, Current Medicines, Genetics, Vaccinations)
 // 3. Uploadable & editable lab reports / files
-// 4. IIIT Delhi Hospital Smart Queue: Cancel appointment, flag empty slot, and drag/assign waiting early-arrival patients
+// 4. Hospital Smart Queue: Cancel appointment, flag empty slot, and drag/assign waiting early-arrival patients
 // 5. Backend connection ready with graceful offline fallback
 
 export interface ActiveMedication {
@@ -303,7 +303,7 @@ export interface DoctorProfile {
   sponsoredBadge?: string;
 }
 
-// Initial Data for IIIT Delhi Hospital
+// Initial Data for Hospital
 const INITIAL_MEDICATIONS: ActiveMedication[] = [
   {
     id: "med-1",
@@ -316,7 +316,7 @@ const INITIAL_MEDICATIONS: ActiveMedication[] = [
     daysCompleted: 4,
     daysRemaining: 26,
     purpose: "Cardioprotection and blood thinning",
-    prescribedBy: "Dr. Rajesh Sharma (IIIT Delhi Hospital)",
+    prescribedBy: "Dr. Rajesh Sharma (Hospital)",
     prescribedDate: "17 Oct 2026",
     instructions: "Chew thoroughly after meal with water.",
     janAushadhiGeneric: "Aspirin 75mg Tablets PMBI",
@@ -335,7 +335,7 @@ const INITIAL_MEDICATIONS: ActiveMedication[] = [
     daysCompleted: 12,
     daysRemaining: 48,
     purpose: "Lipid control and plaque stabilization",
-    prescribedBy: "Dr. Rajesh Sharma (IIIT Delhi Hospital)",
+    prescribedBy: "Dr. Rajesh Sharma (Hospital)",
     prescribedDate: "05 Oct 2026",
     instructions: "Take every night before sleeping.",
     janAushadhiGeneric: "Atorvastatin 20mg Tablets PMBI",
@@ -352,7 +352,7 @@ const INITIAL_DIGITAL_PRESCRIPTIONS: DigitalPrescription[] = [
     medicationName: "Aspirin Chewable",
     dosage: "75 mg once daily after breakfast",
     instructions: "Chew thoroughly after breakfast with a full glass of water",
-    prescribedBy: "Dr. Rajesh Sharma (Chief Medical Officer & Cardiology, IIIT Delhi Hospital)",
+    prescribedBy: "Dr. Rajesh Sharma (Chief Medical Officer & Cardiology, Hospital)",
     prescribedDate: "17 Oct 2026",
     prescribedTime: "10:30 AM",
     status: "Active",
@@ -382,7 +382,7 @@ const INITIAL_DIGITAL_PRESCRIPTIONS: DigitalPrescription[] = [
     medicationName: "Atorvastatin Tablet",
     dosage: "20 mg once daily at bedtime",
     instructions: "Take every night before sleeping for lipid control",
-    prescribedBy: "Dr. Rajesh Sharma (Chief Medical Officer & Cardiology, IIIT Delhi Hospital)",
+    prescribedBy: "Dr. Rajesh Sharma (Chief Medical Officer & Cardiology, Hospital)",
     prescribedDate: "15 Oct 2026",
     prescribedTime: "11:15 AM",
     status: "Active",
@@ -395,7 +395,7 @@ const INITIAL_DIGITAL_PRESCRIPTIONS: DigitalPrescription[] = [
     medicationName: "Metoprolol Succinate",
     dosage: "25 mg once daily in the morning",
     instructions: "Maintains smooth resting heart rate",
-    prescribedBy: "Dr. Neha Kapoor (Internal Medicine & Diagnostics, IIIT Delhi Hospital)",
+    prescribedBy: "Dr. Neha Kapoor (Internal Medicine & Diagnostics, Hospital)",
     prescribedDate: "12 Oct 2026",
     prescribedTime: "04:45 PM",
     status: "Active",
@@ -411,7 +411,7 @@ const INITIAL_AI_REPORT: AIHealthReport = {
   gender: "Male",
   generatedDate: "18 Oct 2026, 03:00 AM",
   overallHealthStatus: "Stable Under Cardiac Observation",
-  primaryCondition: "Coronary Health Evaluation (IIIT Delhi Hospital)",
+  primaryCondition: "Coronary Health Evaluation (Hospital)",
   clinicalSummaryText:
     "Patient Ramesh Kumar (54M) under routine cardiac follow-up. Blood pressure and resting pulse remain well within safe clinical targets. Active prescriptions are being maintained.",
   criticalAllergyWarning:
@@ -439,7 +439,7 @@ const INITIAL_AI_REPORT: AIHealthReport = {
   aiCareDirectives: [
     "Continue Aspirin 75mg daily after breakfast.",
     "Avoid painkillers containing Ibuprofen, Combiflam, or Diclofenac.",
-    "Annual cardiology review scheduled at IIIT Delhi Hospital.",
+    "Annual cardiology review scheduled at Hospital.",
   ],
 };
 
@@ -519,8 +519,8 @@ export const INITIAL_HEALTH_PROFILE: PatientHealthProfile = {
 
 const INITIAL_QUEUE_SLOTS: HospitalQueueSlot[] = [
   {
-    id: "Q-IIITD-01",
-    hospitalId: "HOSP-IIITD",
+    id: "Q-HOSP-01",
+    hospitalId: "HOSP-01",
     slotTime: "15:45",
     patientId: "RAMESH-54",
     patientName: "Ramesh Kumar",
@@ -528,15 +528,15 @@ const INITIAL_QUEUE_SLOTS: HospitalQueueSlot[] = [
     gender: "Male",
     severity: "Emergency",
     status: "Confirmed",
-    referringSpoke: "IIITD Campus Medical Spoke",
+    referringSpoke: "Rural Health Extension Spoke",
     attendingDoctor: "Dr. Rajesh Sharma",
     notes: "Post-STEMI Cardiology Review",
   },
   {
-    id: "Q-IIITD-02",
-    hospitalId: "HOSP-IIITD",
+    id: "Q-HOSP-02",
+    hospitalId: "HOSP-01",
     slotTime: "16:00",
-    patientId: "PAT-IIITD-881",
+    patientId: "PAT-HOSP-881",
     patientName: "Pooja Singhal",
     age: 38,
     gender: "Female",
@@ -547,10 +547,10 @@ const INITIAL_QUEUE_SLOTS: HospitalQueueSlot[] = [
     notes: "Cardio-Metabolic Screening",
   },
   {
-    id: "Q-IIITD-03",
-    hospitalId: "HOSP-IIITD",
+    id: "Q-HOSP-03",
+    hospitalId: "HOSP-01",
     slotTime: "16:15",
-    patientId: "PAT-IIITD-912",
+    patientId: "PAT-HOSP-912",
     patientName: "Mohan Lal",
     age: 62,
     gender: "Male",
@@ -561,10 +561,10 @@ const INITIAL_QUEUE_SLOTS: HospitalQueueSlot[] = [
     notes: "Unstable Angina Follow-up",
   },
   {
-    id: "Q-IIITD-04",
-    hospitalId: "HOSP-IIITD",
+    id: "Q-HOSP-04",
+    hospitalId: "HOSP-01",
     slotTime: "16:30",
-    patientId: "PAT-IIITD-945",
+    patientId: "PAT-HOSP-945",
     patientName: "Kavita Rao",
     age: 41,
     gender: "Female",
@@ -575,10 +575,10 @@ const INITIAL_QUEUE_SLOTS: HospitalQueueSlot[] = [
     notes: "Hypertension Assessment",
   },
   {
-    id: "Q-IIITD-05",
-    hospitalId: "HOSP-IIITD",
+    id: "Q-HOSP-05",
+    hospitalId: "HOSP-01",
     slotTime: "16:45",
-    patientId: "PAT-IIITD-998",
+    patientId: "PAT-HOSP-998",
     patientName: "Sanjay Mehra",
     age: 50,
     gender: "Male",
@@ -629,7 +629,7 @@ const INITIAL_WAITING_PATIENTS: WaitingEarlyArrivalPatient[] = [
 const INITIAL_HOSPITAL_PATIENTS: HospitalPatient[] = [
   {
     id: "HP-01",
-    hospitalId: "HOSP-IIITD",
+    hospitalId: "HOSP-01",
     name: "Ramesh Kumar",
     age: 54,
     gender: "Male",
@@ -642,7 +642,7 @@ const INITIAL_HOSPITAL_PATIENTS: HospitalPatient[] = [
   },
   {
     id: "HP-02",
-    hospitalId: "HOSP-IIITD",
+    hospitalId: "HOSP-01",
     name: "Pooja Singhal",
     age: 38,
     gender: "Female",
@@ -655,7 +655,7 @@ const INITIAL_HOSPITAL_PATIENTS: HospitalPatient[] = [
   },
   {
     id: "HP-03",
-    hospitalId: "HOSP-IIITD",
+    hospitalId: "HOSP-01",
     name: "Mohan Lal",
     age: 62,
     gender: "Male",
@@ -668,7 +668,7 @@ const INITIAL_HOSPITAL_PATIENTS: HospitalPatient[] = [
   },
   {
     id: "HP-04",
-    hospitalId: "HOSP-IIITD",
+    hospitalId: "HOSP-01",
     name: "Kavita Rao",
     age: 41,
     gender: "Female",
@@ -683,9 +683,9 @@ const INITIAL_HOSPITAL_PATIENTS: HospitalPatient[] = [
 
 const INITIAL_DOCTORS: DoctorProfile[] = [
   {
-    id: "DOC-IIITD-01",
-    hospitalId: "HOSP-IIITD",
-    hospitalName: "IIIT Delhi Hospital",
+    id: "DOC-HOSP-01",
+    hospitalId: "HOSP-01",
+    hospitalName: "Hospital",
     name: "Dr. Rajesh Sharma",
     specialty: "Interventional Cardiology & CMO",
     experienceYears: 16,
@@ -694,7 +694,7 @@ const INITIAL_DOCTORS: DoctorProfile[] = [
     reviewCount: 142,
     peerUpvotes: 312,
     matchedSymptoms: ["chest pain", "shortness of breath", "high blood pressure", "palpitations", "heart attack", "stemi"],
-    bio: "Chief Medical Officer at IIIT Delhi Hospital. Specialist in cardiac care, angioplasty, and telemetry consultations.",
+    bio: "Chief Medical Officer at Hospital. Specialist in cardiac care, angioplasty, and telemetry consultations.",
     availableNext: "Available in OPD",
     location: "Okhla Phase III, New Delhi",
     distanceKm: 0.8,
@@ -702,9 +702,9 @@ const INITIAL_DOCTORS: DoctorProfile[] = [
     sponsoredBadge: "Verified Hospital Partner",
   },
   {
-    id: "DOC-IIITD-02",
-    hospitalId: "HOSP-IIITD",
-    hospitalName: "IIIT Delhi Hospital",
+    id: "DOC-HOSP-02",
+    hospitalId: "HOSP-01",
+    hospitalName: "Hospital",
     name: "Dr. Neha Kapoor",
     specialty: "Internal Medicine & Diagnostics",
     experienceYears: 11,
@@ -713,14 +713,14 @@ const INITIAL_DOCTORS: DoctorProfile[] = [
     reviewCount: 96,
     peerUpvotes: 215,
     matchedSymptoms: ["fever", "cough", "infection", "stomach pain", "fatigue", "general weakness", "diabetes"],
-    bio: "Senior Consultant in Internal Medicine at IIIT Delhi Hospital managing acute clinical triage and multi-system care.",
+    bio: "Senior Consultant in Internal Medicine at Hospital managing acute clinical triage and multi-system care.",
     availableNext: "Available in OPD",
     location: "Govind Puri, South Delhi",
     distanceKm: 1.4,
   },
   {
-    id: "DOC-IIITD-03",
-    hospitalId: "HOSP-IIITD",
+    id: "DOC-HOSP-03",
+    hospitalId: "HOSP-01",
     hospitalName: "Jan Aushadhi Community Clinic",
     name: "Dr. Harpreet Singh Gill",
     specialty: "Family Medicine & General OPD",
@@ -736,8 +736,8 @@ const INITIAL_DOCTORS: DoctorProfile[] = [
     distanceKm: 1.8,
   },
   {
-    id: "DOC-IIITD-04",
-    hospitalId: "HOSP-IIITD",
+    id: "DOC-HOSP-04",
+    hospitalId: "HOSP-01",
     hospitalName: "Fortis Escorts Heart Institute",
     name: "Dr. Ananya Roy",
     specialty: "Pulmonology & Respiratory Care",
@@ -753,8 +753,8 @@ const INITIAL_DOCTORS: DoctorProfile[] = [
     distanceKm: 1.1,
   },
   {
-    id: "DOC-IIITD-05",
-    hospitalId: "HOSP-IIITD",
+    id: "DOC-HOSP-05",
+    hospitalId: "HOSP-01",
     hospitalName: "Max Super Specialty Hospital",
     name: "Dr. Amitav Banerjee",
     specialty: "Orthopaedics & Joint Replacement",
@@ -770,8 +770,8 @@ const INITIAL_DOCTORS: DoctorProfile[] = [
     distanceKm: 4.2,
   },
   {
-    id: "DOC-IIITD-06",
-    hospitalId: "HOSP-IIITD",
+    id: "DOC-HOSP-06",
+    hospitalId: "HOSP-01",
     hospitalName: "Apollo Specialty Hospital",
     name: "Dr. Priya Ramanathan",
     specialty: "Endocrinology & Diabetology",
@@ -789,8 +789,8 @@ const INITIAL_DOCTORS: DoctorProfile[] = [
     sponsoredBadge: "Sponsored Clinic Partner",
   },
   {
-    id: "DOC-IIITD-07",
-    hospitalId: "HOSP-IIITD",
+    id: "DOC-HOSP-07",
+    hospitalId: "HOSP-01",
     hospitalName: "Sir Ganga Ram Hospital",
     name: "Dr. Sunita Deshmukh",
     specialty: "Gastroenterology & Hepatology",
@@ -806,8 +806,8 @@ const INITIAL_DOCTORS: DoctorProfile[] = [
     distanceKm: 9.3,
   },
   {
-    id: "DOC-IIITD-08",
-    hospitalId: "HOSP-IIITD",
+    id: "DOC-HOSP-08",
+    hospitalId: "HOSP-01",
     hospitalName: "AIIMS Apex Trauma Centre",
     name: "Dr. Vikramaditya Sen",
     specialty: "Neurology & Stroke Care",
@@ -1113,9 +1113,9 @@ const INITIAL_BOOKED_APPOINTMENTS: BookedAppointment[] = [
     patientId: "FAM-03",
     patientName: "Ramprasad Kumar",
     relationship: "Father",
-    doctorId: "DOC-IIITD-01",
+    doctorId: "DOC-HOSP-01",
     doctorName: "Dr. Rajesh Sharma",
-    hospitalName: "IIIT Delhi Hospital",
+    hospitalName: "Hospital",
     specialty: "Interventional Cardiology & CMO",
     slotDate: "Today, 29 Oct 2026",
     slotTime: "04:30 PM",
@@ -1594,7 +1594,7 @@ class ClinicalStore {
     return { ...this.aiReport };
   }
 
-  // --- IIIT Delhi Hospital Smart Queue & Waiting Room Engine ---
+  // --- Hospital Smart Queue & Waiting Room Engine ---
   public getHospitalQueue(_hospitalId?: string): HospitalQueueSlot[] {
     return [...this.queueSlots];
   }
@@ -1617,7 +1617,7 @@ class ClinicalStore {
 
     // Notify backend
     try {
-      fetch(`${BACKEND_URL}/api/hospital/HOSP-IIITD/queue/${slotId}/cancel`, {
+      fetch(`${BACKEND_URL}/api/hospital/HOSP-01/queue/${slotId}/cancel`, {
         method: "POST",
       }).catch(() => {});
     } catch {}
@@ -1650,7 +1650,7 @@ class ClinicalStore {
 
     // Sync with backend
     try {
-      fetch(`${BACKEND_URL}/api/hospital/HOSP-IIITD/queue/${slotId}/reallocate`, {
+      fetch(`${BACKEND_URL}/api/hospital/HOSP-01/queue/${slotId}/reallocate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -1696,7 +1696,7 @@ class ClinicalStore {
   public addQueueSlot(slot: Omit<HospitalQueueSlot, "id">): HospitalQueueSlot {
     const newSlot: HospitalQueueSlot = {
       ...slot,
-      id: `Q-IIITD-${Date.now().toString().slice(-4)}`,
+      id: `Q-HOSP-${Date.now().toString().slice(-4)}`,
     };
     this.queueSlots.push(newSlot);
     this.persist();
@@ -1726,7 +1726,7 @@ class ClinicalStore {
     return null;
   }
 
-  // --- Hospital Patients & Doctors (IIIT Delhi Hospital) ---
+  // --- Hospital Patients & Doctors (Hospital) ---
   public getHospitalPatients(_hospitalId?: string): HospitalPatient[] {
     return [...this.hospitalPatients];
   }
