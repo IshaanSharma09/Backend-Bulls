@@ -36,5 +36,6 @@
       "reviews_needed_to_unlock": 3,
       "scores": null
     }
-  ]
+  ],
+  "schema_version": "2026.10.29"
 }
