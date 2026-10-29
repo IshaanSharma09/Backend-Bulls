@@ -11,6 +11,10 @@ import {
   DoctorProfile,
   DynamicPatientAccessCode,
   DigitalPrescription,
+  OrganConditionRecord,
+  OrganSystem,
+  FamilyMemberProfile,
+  BookedAppointment,
 } from "../../lib/clinicalStore";
 import {
   ShieldCheck,
@@ -26,6 +30,7 @@ import {
   Calendar,
   ArrowRight,
   User,
+  Users,
   Lock,
   Upload,
   Plus,
@@ -43,22 +48,65 @@ import {
   MapPin,
   ArrowUpDown,
   IndianRupee,
+  Heart,
+  Wind,
+  Flame,
+  Brain,
+  Activity,
+  Shield,
+  Tag,
+  ChevronRight,
 } from "lucide-react";
 
 function PatientDashboardContent() {
   const { patientUser } = useAuth();
   const searchParams = useSearchParams();
 
-  // Active Tab state: 4 clean tabs including Prescription History
-  const [activeTab, setActiveTab] = useState<"report" | "code" | "prescriptions" | "doctor">("report");
+  // Active Tab state: 6 clean tabs
+  const [activeTab, setActiveTab] = useState<"organ" | "doctor" | "appointments" | "prescriptions" | "report" | "code">("organ");
+  const [language, setLanguage] = useState<"en" | "hi">("en");
 
-  // Health Profile State (100% User Editable with pen icons)
+  // Family Member Management State (Single Phone Account)
+  const [familyMembers, setFamilyMembers] = useState<FamilyMemberProfile[]>(clinicalStore.getFamilyMembers());
+  const [activeMemberId, setActiveMemberId] = useState<string>(clinicalStore.getActiveMemberId());
+  const [activeMember, setActiveMember] = useState<FamilyMemberProfile>(clinicalStore.getActiveFamilyMember());
+  const [showAddMemberModal, setShowAddMemberModal] = useState(false);
+  const [newMemberName, setNewMemberName] = useState("");
+  const [newMemberRel, setNewMemberRel] = useState<FamilyMemberProfile["relationship"]>("Spouse");
+  const [newMemberAge, setNewMemberAge] = useState(30);
+  const [newMemberGender, setNewMemberGender] = useState("Female");
+  const [newMemberBlood, setNewMemberBlood] = useState("O+");
+  const [newMemberAllergies, setNewMemberAllergies] = useState("");
+
+  // Organ Condition State
+  const [organFilter, setOrganFilter] = useState<string>("All");
+  const [showAddOrganModal, setShowAddOrganModal] = useState(false);
+  const [newOrganSystem, setNewOrganSystem] = useState<OrganConditionRecord["organSystem"]>("Cardiovascular (Heart)");
+  const [newConditionName, setNewConditionName] = useState("");
+  const [newDiagnosedYear, setNewDiagnosedYear] = useState(new Date().getFullYear().toString());
+  const [newStatus, setNewStatus] = useState<OrganConditionRecord["status"]>("Managed");
+  const [newSeverity, setNewSeverity] = useState<OrganConditionRecord["severity"]>("Moderate");
+  const [newClinicalNotes, setNewClinicalNotes] = useState("");
+  const [newFutureRisk, setNewFutureRisk] = useState("");
+
+  // Booked Appointments State
+  const [bookedAppointments, setBookedAppointments] = useState<BookedAppointment[]>(clinicalStore.getBookedAppointments());
+  const [showBookingModal, setShowBookingModal] = useState(false);
+  const [bookingDoctor, setBookingDoctor] = useState<DoctorProfile | null>(null);
+  const [bookingPatientId, setBookingPatientId] = useState<string>(activeMemberId);
+  const [bookingDate, setBookingDate] = useState("Today, 29 Oct 2026");
+  const [bookingSlot, setBookingSlot] = useState("04:30 PM");
+  const [bookingComplaint, setBookingComplaint] = useState("");
+  const [confirmedPass, setConfirmedPass] = useState<BookedAppointment | null>(null);
+  const [expSort, setExpSort] = useState<"none" | "desc" | "asc">("desc");
+
+  // Health Profile State (User Editable with pen icons)
   const [profile, setProfile] = useState<PatientHealthProfile>(clinicalStore.getHealthProfile());
   const [saveSuccessMsg, setSaveSuccessMsg] = useState<string | null>(null);
 
   // Digital Prescriptions issued by doctors
   const [prescriptions, setPrescriptions] = useState<DigitalPrescription[]>(
-    clinicalStore.getDigitalPrescriptions("RAMESH-54")
+    clinicalStore.getDigitalPrescriptions("FAM-01")
   );
 
   // Dynamic Access Code State
@@ -139,18 +187,31 @@ function PatientDashboardContent() {
 
   useEffect(() => {
     const tabParam = searchParams.get("tab");
-    if (tabParam === "code" || tabParam === "doctor" || tabParam === "report" || tabParam === "prescriptions") {
-      setActiveTab(tabParam);
+    if (
+      tabParam === "organ" ||
+      tabParam === "code" ||
+      tabParam === "doctor" ||
+      tabParam === "report" ||
+      tabParam === "prescriptions" ||
+      tabParam === "appointments"
+    ) {
+      setActiveTab(tabParam as any);
     }
   }, [searchParams]);
 
   useEffect(() => {
     const sync = () => {
-      const p = clinicalStore.getHealthProfile();
-      setProfile(p);
-      setAccessCode(clinicalStore.getAccessCode());
+      const fams = clinicalStore.getFamilyMembers();
+      setFamilyMembers(fams);
+      const currentActiveId = clinicalStore.getActiveMemberId();
+      setActiveMemberId(currentActiveId);
+      const currentActiveMem = clinicalStore.getActiveFamilyMember();
+      setActiveMember(currentActiveMem);
+      setProfile(clinicalStore.getHealthProfile());
+      setAccessCode(currentActiveMem.accessCode || clinicalStore.getAccessCode());
       setDoctors(clinicalStore.getAllDoctors());
-      setPrescriptions(clinicalStore.getDigitalPrescriptions(p.patientId));
+      setPrescriptions(clinicalStore.getDigitalPrescriptions(currentActiveId));
+      setBookedAppointments(clinicalStore.getBookedAppointments());
     };
     sync();
     const unsub = clinicalStore.subscribe(sync);
@@ -160,6 +221,104 @@ function PatientDashboardContent() {
   const showNotification = (msg: string) => {
     setSaveSuccessMsg(msg);
     setTimeout(() => setSaveSuccessMsg(null), 3500);
+  };
+
+  // --- Family Member Switcher Handlers ---
+  const handleSwitchMember = (memberId: string) => {
+    clinicalStore.setActiveMemberId(memberId);
+    const activeMem = clinicalStore.getActiveFamilyMember();
+    setActiveMemberId(memberId);
+    setActiveMember(activeMem);
+    setProfile(clinicalStore.getHealthProfile());
+    setAccessCode(activeMem.accessCode || clinicalStore.getAccessCode());
+    setPrescriptions(clinicalStore.getDigitalPrescriptions(memberId));
+    setBookingPatientId(memberId);
+    showNotification(`Switched profile to ${activeMem.name} (${activeMem.relationship}).`);
+  };
+
+  const handleCreateFamilyMember = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newMemberName.trim()) return;
+    const created = clinicalStore.addFamilyMember({
+      name: newMemberName.trim(),
+      relationship: newMemberRel,
+      age: Number(newMemberAge) || 30,
+      gender: newMemberGender,
+      bloodGroup: newMemberBlood,
+      phone: "+91 98765 43210",
+      allergies: newMemberAllergies.split(",").map((s) => s.trim()).filter(Boolean),
+    });
+    setShowAddMemberModal(false);
+    setNewMemberName("");
+    setNewMemberAllergies("");
+    handleSwitchMember(created.id);
+    showNotification(`Added ${created.name} (${created.relationship}) to family phone account.`);
+  };
+
+  // --- Organ Condition Handlers ---
+  const handleAddOrganCondition = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newConditionName.trim()) return;
+    clinicalStore.addOrganCondition(activeMemberId, {
+      organSystem: newOrganSystem,
+      conditionName: newConditionName.trim(),
+      diagnosedYear: newDiagnosedYear.trim() || new Date().getFullYear().toString(),
+      status: newStatus,
+      severity: newSeverity,
+      clinicalNotes: newClinicalNotes.trim(),
+      futureRiskAlert: newFutureRisk.trim(),
+    });
+    setShowAddOrganModal(false);
+    setNewConditionName("");
+    setNewClinicalNotes("");
+    setNewFutureRisk("");
+    showNotification(`Past organ condition logged for ${activeMember.name}.`);
+  };
+
+  const handleDeleteOrganCondition = (conditionId: string) => {
+    clinicalStore.deleteOrganCondition(activeMemberId, conditionId);
+    showNotification("Organ condition record removed.");
+  };
+
+  // --- Appointment Booking Handlers ---
+  const handleStartBooking = (doc: DoctorProfile) => {
+    setBookingDoctor(doc);
+    setBookingPatientId(activeMemberId);
+    setShowBookingModal(true);
+  };
+
+  const handleConfirmBooking = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!bookingDoctor) return;
+    const targetMember = familyMembers.find((m) => m.id === bookingPatientId) || activeMember;
+    const app = clinicalStore.bookAppointment({
+      patientId: targetMember.id,
+      patientName: targetMember.name,
+      relationship: targetMember.relationship,
+      doctorId: bookingDoctor.id,
+      doctorName: bookingDoctor.name,
+      hospitalName: bookingDoctor.hospitalName,
+      specialty: bookingDoctor.specialty,
+      slotDate: bookingDate,
+      slotTime: bookingSlot,
+      consultationFee: bookingDoctor.consultationFee,
+      chiefComplaint: bookingComplaint.trim() || "General medical consultation",
+    });
+    setConfirmedPass(app);
+    setShowBookingModal(false);
+    setBookingComplaint("");
+    showNotification(`Appointment confirmed! Token ${app.tokenNumber} issued.`);
+  };
+
+  const handleCancelAppointment = (appointmentId: string) => {
+    clinicalStore.cancelAppointment(appointmentId);
+    showNotification("Appointment has been cancelled.");
+  };
+
+  const handleToggleExpSort = () => {
+    setPriceSort("none");
+    setLocationSort("none");
+    setExpSort((prev) => (prev === "desc" ? "asc" : prev === "asc" ? "none" : "desc"));
   };
 
   // --- Dynamic Code Handlers ---
@@ -573,11 +732,13 @@ IIIT Delhi Medical Centre Central Registry
 
   const handleTogglePriceSort = () => {
     setLocationSort("none");
+    setExpSort("none");
     setPriceSort((prev) => (prev === "none" ? "asc" : prev === "asc" ? "desc" : "none"));
   };
 
   const handleToggleLocationSort = () => {
     setPriceSort("none");
+    setExpSort("none");
     setLocationSort((prev) => (prev === "none" ? "nearest" : prev === "nearest" ? "alpha" : "none"));
   };
 
@@ -594,6 +755,12 @@ IIIT Delhi Medical Centre Central Registry
       );
     })
     .sort((a, b) => {
+      if (expSort === "desc") {
+        return b.experienceYears - a.experienceYears;
+      }
+      if (expSort === "asc") {
+        return a.experienceYears - b.experienceYears;
+      }
       if (priceSort === "asc") {
         return a.consultationFee - b.consultationFee;
       }
@@ -611,81 +778,146 @@ IIIT Delhi Medical Centre Central Registry
 
   return (
     <div className="space-y-6 pb-16 animate-fade-in max-w-4xl mx-auto">
-      {/* Top Patient Profile Header */}
-      <div className="bg-white rounded-2xl border border-border p-5 sm:p-6 shadow-sm">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="space-y-1">
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-surface text-brand-primary text-xs font-semibold">
-              <ShieldCheck className="w-3.5 h-3.5" />
-              <span>Personal Health Profile (IIIT Delhi Hospital)</span>
+      {/* FAMILY PHONE ACCOUNT HEADER (RURAL BHARAT SINGLE PHONE ARCHITECTURE) */}
+      <div className="bg-white rounded-2xl border border-border p-4 sm:p-5 shadow-xs space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border pb-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-surface border border-border flex items-center justify-center text-brand-primary flex-shrink-0">
+              <Users className="w-5 h-5" />
             </div>
-            <h1 className="text-xl sm:text-2xl font-bold text-text-main">
-              {profile.patientName || patientUser?.name || "Ramesh Kumar"}
-            </h1>
-            <p className="text-xs text-text-muted">
-              Patient ID: <strong className="text-text-main font-mono">{profile.patientId}</strong> | Blood Group: <strong className="text-brand-primary font-mono">{profile.bloodGroup}</strong> | Age: {profile.age} {profile.gender}
-            </p>
+            <div>
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-text-muted">
+                  {language === "hi" ? "पारिवारिक फोन खाता" : "Family Phone Account"}
+                </span>
+                <span className="px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200 text-[10px] font-mono font-bold">
+                  +91 98765 43210
+                </span>
+                <span className="px-1.5 py-0.5 rounded bg-surface border border-border text-[10px] text-text-muted">
+                  {familyMembers.length} {language === "hi" ? "सदस्य जुड़े हैं" : "Profiles Linked"}
+                </span>
+              </div>
+              <h2 className="text-sm font-bold text-text-main mt-0.5 flex flex-wrap items-center gap-2">
+                <span>Kisan Parivar Household Circle</span>
+                <span className="text-text-muted text-xs font-normal">
+                  • {language === "hi" ? "सक्रिय व्यक्ति:" : "Viewing:"} <strong className="text-brand-primary font-semibold">{activeMember.name}</strong> ({activeMember.relationship}, {activeMember.age}y)
+                </span>
+              </h2>
+            </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 self-start sm:self-auto">
+            {/* Language Toggle */}
+            <div className="flex items-center gap-1 bg-surface p-1 rounded-xl border border-border text-xs">
+              <button
+                type="button"
+                onClick={() => setLanguage("en")}
+                className={`px-2.5 py-1 rounded-lg font-semibold transition-all ${
+                  language === "en"
+                    ? "bg-white text-brand-primary shadow-xs border border-border/60"
+                    : "text-text-muted hover:text-text-main"
+                }`}
+              >
+                English
+              </button>
+              <button
+                type="button"
+                onClick={() => setLanguage("hi")}
+                className={`px-2.5 py-1 rounded-lg font-semibold transition-all ${
+                  language === "hi"
+                    ? "bg-white text-brand-primary shadow-xs border border-border/60"
+                    : "text-text-muted hover:text-text-main"
+                }`}
+              >
+                हिंदी (सरल)
+              </button>
+            </div>
+
             <button
               type="button"
               onClick={() => window.print()}
-              className="px-3.5 py-2 rounded-xl bg-surface hover:bg-surface/80 text-text-main border border-border text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-sm"
+              className="px-3 py-1.5 rounded-xl bg-surface hover:bg-surface/80 text-text-main border border-border text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-xs"
             >
               <Printer className="w-3.5 h-3.5" />
-              <span>Print Profile</span>
+              <span>{language === "hi" ? "प्रिंट" : "Print"}</span>
             </button>
           </div>
         </div>
 
+        {/* 1-Click Family Member Switcher */}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs font-semibold text-text-muted flex items-center gap-1 mr-1">
+              <User className="w-3.5 h-3.5 text-brand-primary" />
+              <span>{language === "hi" ? "मरीज़ चुनें:" : "Select Patient:"}</span>
+            </span>
+
+            {familyMembers.map((member) => (
+              <button
+                key={member.id}
+                type="button"
+                onClick={() => handleSwitchMember(member.id)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all border ${
+                  activeMemberId === member.id
+                    ? "bg-brand-primary text-white border-brand-primary shadow-xs"
+                    : "bg-surface hover:bg-surface/80 text-text-main border-border"
+                }`}
+              >
+                <span>{member.name}</span>
+                <span
+                  className={`text-[10px] px-1.5 py-0.5 rounded ${
+                    activeMemberId === member.id
+                      ? "bg-white/20 text-white"
+                      : "bg-white text-text-muted border border-border/60"
+                  }`}
+                >
+                  {member.relationship} ({member.age}y)
+                </span>
+              </button>
+            ))}
+
+            <button
+              type="button"
+              onClick={() => setShowAddMemberModal(true)}
+              className="px-2.5 py-1.5 rounded-xl bg-white hover:bg-surface text-brand-primary border border-dashed border-brand-primary/40 text-xs font-semibold flex items-center gap-1 shadow-xs"
+              title="Add family member under this phone number"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>{language === "hi" ? "नया सदस्य" : "Add Member"}</span>
+            </button>
+          </div>
+
+          <div className="text-[11px] text-text-muted flex items-center gap-1">
+            <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+            <span>
+              {language === "hi"
+                ? "प्रत्येक सदस्य का रिकॉर्ड और 15-मिनट कोड पूरी तरह सुरक्षित व अलग है।"
+                : "Each member holds an isolated medical record and dynamic 15-min code."}
+            </span>
+          </div>
+        </div>
+
         {saveSuccessMsg && (
-          <div className="mt-4 p-3 rounded-xl bg-surface border border-brand-accent/40 text-xs font-semibold text-brand-primary flex items-center gap-2 animate-fade-in">
+          <div className="p-3 rounded-xl bg-surface border border-brand-accent/40 text-xs font-semibold text-brand-primary flex items-center gap-2 animate-fade-in">
             <CheckCircle2 className="w-4 h-4 text-brand-primary flex-shrink-0" />
             <span>{saveSuccessMsg}</span>
           </div>
         )}
       </div>
 
-      {/* FOUR DISTINCT TABS */}
+      {/* SIX CLEAN TABS */}
       <div className="flex flex-wrap items-center gap-1.5 p-1.5 bg-surface rounded-2xl border border-border">
         <button
           type="button"
-          onClick={() => setActiveTab("report")}
+          onClick={() => setActiveTab("organ")}
           className={`flex-1 min-w-[130px] py-2.5 px-3 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-2 ${
-            activeTab === "report"
-              ? "bg-white text-brand-primary border border-border shadow-sm"
+            activeTab === "organ"
+              ? "bg-white text-brand-primary border border-border shadow-xs"
               : "text-text-muted hover:text-text-main"
           }`}
         >
-          <FileText className="w-4 h-4" />
-          <span>Health Profile & Lab Files</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setActiveTab("code")}
-          className={`flex-1 min-w-[130px] py-2.5 px-3 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-2 ${
-            activeTab === "code"
-              ? "bg-white text-brand-primary border border-border shadow-sm"
-              : "text-text-muted hover:text-text-main"
-          }`}
-        >
-          <Key className="w-4 h-4" />
-          <span>Doctor Visit Code (15-Min)</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setActiveTab("prescriptions")}
-          className={`flex-1 min-w-[130px] py-2.5 px-3 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-2 ${
-            activeTab === "prescriptions"
-              ? "bg-white text-brand-primary border border-border shadow-sm"
-              : "text-text-muted hover:text-text-main"
-          }`}
-        >
-          <Pill className="w-4 h-4" />
-          <span>Prescription History</span>
+          <Activity className="w-4 h-4 text-emerald-600" />
+          <span>{language === "hi" ? "अंग व पुरानी बीमारियाँ" : "Past Organ Diseases"}</span>
         </button>
 
         <button
@@ -693,14 +925,434 @@ IIIT Delhi Medical Centre Central Registry
           onClick={() => setActiveTab("doctor")}
           className={`flex-1 min-w-[130px] py-2.5 px-3 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-2 ${
             activeTab === "doctor"
-              ? "bg-white text-brand-primary border border-border shadow-sm"
+              ? "bg-white text-brand-primary border border-border shadow-xs"
               : "text-text-muted hover:text-text-main"
           }`}
         >
-          <Search className="w-4 h-4" />
-          <span>Find Doctor</span>
+          <Calendar className="w-4 h-4" />
+          <span>{language === "hi" ? "नज़दीकी डॉक्टर बुक करें" : "Book Nearby Doctor"}</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab("appointments")}
+          className={`flex-1 min-w-[130px] py-2.5 px-3 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-2 ${
+            activeTab === "appointments"
+              ? "bg-white text-brand-primary border border-border shadow-xs"
+              : "text-text-muted hover:text-text-main"
+          }`}
+        >
+          <Clock className="w-4 h-4" />
+          <span>{language === "hi" ? "मेरी अपॉइंटमेंट" : "My Bookings"}</span>
+          {bookedAppointments.length > 0 && (
+            <span className="px-1.5 py-0.2 rounded-md bg-brand-primary text-white text-[10px]">
+              {bookedAppointments.length}
+            </span>
+          )}
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab("prescriptions")}
+          className={`flex-1 min-w-[130px] py-2.5 px-3 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-2 ${
+            activeTab === "prescriptions"
+              ? "bg-white text-brand-primary border border-border shadow-xs"
+              : "text-text-muted hover:text-text-main"
+          }`}
+        >
+          <Pill className="w-4 h-4" />
+          <span>{language === "hi" ? "दवाइयों का इतिहास" : "Prescription History"}</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab("report")}
+          className={`flex-1 min-w-[130px] py-2.5 px-3 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-2 ${
+            activeTab === "report"
+              ? "bg-white text-brand-primary border border-border shadow-xs"
+              : "text-text-muted hover:text-text-main"
+          }`}
+        >
+          <FileText className="w-4 h-4" />
+          <span>{language === "hi" ? "स्वास्थ्य फाइलें व एलर्जी" : "Health Profile & Files"}</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab("code")}
+          className={`flex-1 min-w-[130px] py-2.5 px-3 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-2 ${
+            activeTab === "code"
+              ? "bg-white text-brand-primary border border-border shadow-xs"
+              : "text-text-muted hover:text-text-main"
+          }`}
+        >
+          <Key className="w-4 h-4 text-amber-600" />
+          <span>{language === "hi" ? "15-मिनट सुरक्षा कोड" : "15-Min Safe Code"}</span>
         </button>
       </div>
+
+      {/* TAB: PAST CONDITIONS BY ORGAN SYSTEM */}
+      {activeTab === "organ" && (
+        <div className="space-y-6 animate-fade-in">
+          {/* Header Card */}
+          <div className="bg-white rounded-2xl border border-border p-5 sm:p-6 shadow-xs space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4">
+              <div>
+                <div className="flex items-center gap-2">
+                  <Activity className="w-5 h-5 text-emerald-600" />
+                  <h2 className="text-base font-bold text-text-main">
+                    {language === "hi"
+                      ? "अंग अनुसार पुरानी बीमारियाँ एवं भविष्य की सुरक्षा चेतावनी"
+                      : "Past Conditions by Organ System"}
+                  </h2>
+                </div>
+                <p className="text-xs text-text-muted mt-1 max-w-2xl leading-relaxed">
+                  {language === "hi"
+                    ? `${activeMember.name} (${activeMember.relationship}) का अंग-वार मेडिकल इतिहास। किसी भी अंग की पुरानी बीमारी भविष्य में होने वाले इलाज व दवाओं के चयन में डॉक्टर को सचेत करती है।`
+                    : `Longitudinal medical history logged per organ system for ${activeMember.name} (${activeMember.relationship}). Cross-referenced during future visits to alert clinicians of contraindicated drugs and interrelated risks.`}
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setShowAddOrganModal(true)}
+                className="px-3.5 py-2 rounded-xl bg-brand-primary text-white font-semibold text-xs hover:bg-brand-primary/90 transition-all flex items-center gap-1.5 shadow-xs"
+              >
+                <Plus className="w-4 h-4" />
+                <span>{language === "hi" ? "नई बीमारी दर्ज करें" : "Log Past Condition"}</span>
+              </button>
+            </div>
+
+            {/* Organ System Category Filter Pills */}
+            <div className="space-y-2">
+              <span className="text-[11px] font-semibold text-text-muted uppercase tracking-wider block">
+                {language === "hi" ? "अंग चुनें (फ़िल्टर)" : "Filter by Organ System"}:
+              </span>
+              <div className="flex flex-wrap gap-1.5">
+                {[
+                  { id: "All", en: "All Organs", hi: "सभी अंग" },
+                  { id: "Cardiovascular (Heart)", en: "Heart (Cardiovascular)", hi: "हृदय (Cardio)" },
+                  { id: "Respiratory (Lungs)", en: "Lungs (Respiratory)", hi: "फेफड़े (Respiratory)" },
+                  { id: "Gastrointestinal (Stomach & Liver)", en: "Digestive (GI)", hi: "पेट व पाचन (GI)" },
+                  { id: "Endocrine (Diabetes & Thyroid)", en: "Endocrine & Diabetes", hi: "शुगर व ग्रंथि" },
+                  { id: "Renal (Kidneys)", en: "Kidneys (Renal)", hi: "गुर्दे व किडनी" },
+                  { id: "Musculoskeletal (Bones & Joints)", en: "Bones & Joints", hi: "हड्डियाँ व जोड़" },
+                  { id: "Neurological (Brain & Nerves)", en: "Brain & Nerves", hi: "मस्तिष्क व तंत्रिका" },
+                ].map((item) => {
+                  const count =
+                    item.id === "All"
+                      ? activeMember.organConditions.length
+                      : activeMember.organConditions.filter((c) => c.organSystem === item.id).length;
+                  const isSelected = organFilter === item.id;
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => setOrganFilter(item.id as any)}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 border ${
+                        isSelected
+                          ? "bg-brand-primary text-white border-brand-primary shadow-xs"
+                          : "bg-surface/50 text-text-muted hover:text-text-main border-border hover:bg-surface"
+                      }`}
+                    >
+                      <span>{language === "hi" ? item.hi : item.en}</span>
+                      <span
+                        className={`text-[10px] px-1.5 py-0.2 rounded-md ${
+                          isSelected ? "bg-white/20 text-white" : "bg-border text-text-muted"
+                        }`}
+                      >
+                        {count}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
+          {/* Condition Cards Grid */}
+          {activeMember.organConditions.filter((c) => organFilter === "All" || c.organSystem === organFilter).length === 0 ? (
+            <div className="bg-white rounded-2xl border border-dashed border-border p-8 text-center space-y-3">
+              <Activity className="w-8 h-8 text-brand-primary mx-auto opacity-50" />
+              <div className="space-y-1">
+                <p className="font-semibold text-text-main text-xs">
+                  {language === "hi"
+                    ? "इस अंग के लिए कोई पुरानी बीमारी दर्ज नहीं है।"
+                    : "No past conditions logged for this organ system."}
+                </p>
+                <p className="text-[11px] text-text-muted max-w-sm mx-auto">
+                  {language === "hi"
+                    ? "यदि मरीज को कभी इस अंग से संबंधित कोई बीमारी या सर्जरी हुई हो तो दर्ज करें।"
+                    : "Logging past illnesses helps future treating clinicians avoid harmful drug contraindications."}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowAddOrganModal(true)}
+                className="px-3.5 py-1.5 rounded-xl bg-brand-primary text-white font-semibold text-xs inline-flex items-center gap-1 shadow-xs"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>{language === "hi" ? "बीमारी जोड़ें" : "Log Past Condition"}</span>
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {activeMember.organConditions
+                .filter((c) => organFilter === "All" || c.organSystem === organFilter)
+                .map((condition) => (
+                  <div
+                    key={condition.id}
+                    className="bg-white rounded-2xl border border-border p-5 shadow-xs hover:border-brand-primary/40 transition-all flex flex-col justify-between space-y-3.5"
+                  >
+                    <div className="space-y-3">
+                      {/* Top Bar with Organ Badge and Delete */}
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-[10px] font-bold px-2.5 py-1 rounded-lg bg-surface text-brand-primary border border-border flex items-center gap-1.5">
+                          {condition.organSystem.startsWith("Cardiovascular") && <Heart className="w-3.5 h-3.5 text-rose-600" />}
+                          {condition.organSystem.startsWith("Respiratory") && <Wind className="w-3.5 h-3.5 text-sky-600" />}
+                          {condition.organSystem.startsWith("Gastrointestinal") && <Flame className="w-3.5 h-3.5 text-amber-600" />}
+                          {condition.organSystem.startsWith("Endocrine") && <Dna className="w-3.5 h-3.5 text-emerald-600" />}
+                          {condition.organSystem.startsWith("Renal") && <Activity className="w-3.5 h-3.5 text-indigo-600" />}
+                          {condition.organSystem.startsWith("Musculoskeletal") && <Shield className="w-3.5 h-3.5 text-slate-600" />}
+                          {condition.organSystem.startsWith("Neurological") && <Brain className="w-3.5 h-3.5 text-blue-700" />}
+                          <span>{condition.organSystem}</span>
+                        </span>
+
+                        <div className="flex items-center gap-1.5">
+                          <span
+                            className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
+                              condition.status === "Active"
+                                ? "bg-amber-50 text-amber-800 border border-amber-200"
+                                : condition.status === "Managed"
+                                ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
+                                : "bg-surface text-text-muted border border-border"
+                            }`}
+                          >
+                            {condition.status}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteOrganCondition(condition.id)}
+                            className="p-1 rounded-lg text-text-muted hover:text-red-600 transition-colors"
+                            title="Remove condition"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Condition Title & Diagnostics */}
+                      <div>
+                        <h3 className="text-sm font-bold text-text-main">{condition.conditionName}</h3>
+                        <div className="text-xs text-text-muted flex items-center gap-2 mt-0.5">
+                          <span>
+                            {language === "hi" ? "निदान वर्ष" : "Diagnosed"}: <strong>{condition.diagnosedYear}</strong>
+                          </span>
+                          <span>•</span>
+                          <span>
+                            {language === "hi" ? "गंभीरता" : "Severity"}: <strong>{condition.severity}</strong>
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Clinical Notes */}
+                      {condition.clinicalNotes && (
+                        <p className="text-xs text-text-muted leading-relaxed bg-surface/50 p-2.5 rounded-xl border border-border">
+                          {condition.clinicalNotes}
+                        </p>
+                      )}
+
+                      {/* Future Risk Alert / Contraindication Advisory */}
+                      {condition.futureRiskAlert && (
+                        <div className="p-3 rounded-xl bg-amber-50/70 border border-amber-200/90 text-xs space-y-1.5 shadow-2xs">
+                          <div className="flex items-center gap-1.5 font-bold text-amber-900 text-[11px] uppercase tracking-wide">
+                            <AlertTriangle className="w-3.5 h-3.5 text-amber-700 flex-shrink-0" />
+                            <span>
+                              {language === "hi"
+                                ? "भविष्य की बीमारी में डॉक्टर के लिए महत्वपूर्ण चेतावनी"
+                                : "Cross-Referencing Advisory for Future Care"}
+                            </span>
+                          </div>
+                          <p className="text-amber-950 text-xs leading-relaxed font-medium">
+                            {condition.futureRiskAlert}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="pt-2 border-t border-border flex items-center justify-between text-[11px] text-text-muted">
+                      <span>
+                        {language === "hi" ? "सुरक्षित रिकॉर्ड" : "Encrypted Record"} ({activeMember.name})
+                      </span>
+                      <span>Verified Record</span>
+                    </div>
+                  </div>
+                ))}
+            </div>
+          )}
+
+          {/* Rural Patient Explainer Banner */}
+          <div className="p-4 rounded-2xl bg-surface border border-border flex items-start gap-3 text-xs">
+            <ShieldCheck className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
+            <div className="space-y-1">
+              <h4 className="font-bold text-text-main">
+                {language === "hi"
+                  ? "अंग-वार बीमारी रिकॉर्ड भविष्य के इलाज को कैसे सुरक्षित बनाता है?"
+                  : "How organ-based disease tracking protects future healthcare"}
+              </h4>
+              <p className="text-text-muted leading-relaxed">
+                {language === "hi"
+                  ? "यदि किसी मरीज को फेफड़ों (दमा) का पुराना रोग है, और वह भविष्य में दिल की बीमारी के डॉक्टर के पास जाता है, तो डॉक्टर को तुरंत पता चल जाएगा कि ऐसी दवाइयाँ न दी जाएं (जैसे बीटा-ब्लॉकर्स) जो फेफड़ों को नुकसान पहुँचाएँ। हमारा सिस्टम एक ही अंग या उससे जुड़े दूसरे अंगों के इतिहास को खुद जोड़कर गलत इलाज रोकता है।"
+                  : "When evaluating new symptoms, clinicians need instant visibility into prior organ illnesses. For example, a documented history of peptic ulcer disease restricts future NSAID painkiller prescriptions, and asthma restricts non-selective cardiac beta-blockers. MedNexus preserves this longitudinal continuum across all hospital visits."}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAB: BOOKED APPOINTMENTS */}
+      {activeTab === "appointments" && (
+        <div className="space-y-6 animate-fade-in">
+          {/* Header Card */}
+          <div className="bg-white rounded-2xl border border-border p-5 sm:p-6 shadow-xs space-y-3">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4">
+              <div>
+                <div className="flex items-center gap-2">
+                  <Clock className="w-5 h-5 text-brand-primary" />
+                  <h2 className="text-base font-bold text-text-main">
+                    {language === "hi"
+                      ? "मेरी बुक की गई अस्पताल/ओपीडी अपॉइंटमेंट"
+                      : "Booked OPD Appointments & Hospital Passes"}
+                  </h2>
+                </div>
+                <p className="text-xs text-text-muted mt-1 leading-relaxed">
+                  {language === "hi"
+                    ? `फ़ोन नंबर +91 98765 43210 से जुड़े परिवार के सभी सदस्यों के सक्रिय टोकन। अस्पताल काउंटर पर टोकन नंबर दिखाएं।`
+                    : `Active consultation passes and OPD queue tokens booked under family account +91 98765 43210. Present pass at the reception counter.`}
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setActiveTab("doctor")}
+                className="px-3.5 py-2 rounded-xl bg-brand-primary text-white font-semibold text-xs hover:bg-brand-primary/90 transition-all flex items-center gap-1.5 shadow-xs"
+              >
+                <Search className="w-4 h-4" />
+                <span>{language === "hi" ? "नया डॉक्टर खोजें" : "Find & Book Doctor"}</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Appointment Cards List */}
+          {bookedAppointments.length === 0 ? (
+            <div className="p-8 text-center bg-white rounded-2xl border border-dashed border-border space-y-3 text-xs text-text-muted">
+              <Calendar className="w-8 h-8 text-brand-primary mx-auto opacity-50" />
+              <p className="font-semibold text-text-main text-sm">
+                {language === "hi" ? "कोई सक्रिय अपॉइंटमेंट नहीं मिली" : "No Active Appointments Booked"}
+              </p>
+              <p className="max-w-md mx-auto text-text-muted text-xs">
+                {language === "hi"
+                  ? "आप नज़दीकी सत्यापित डॉक्टरों की सूची देख सकते हैं और बिना कतार लगे घर बैठे ओपीडी टोकन ले सकते हैं।"
+                  : "You have not booked any appointments under this family phone number yet. Search verified doctors nearby and secure an OPD token slot."}
+              </p>
+              <button
+                type="button"
+                onClick={() => setActiveTab("doctor")}
+                className="px-4 py-2 rounded-xl bg-brand-primary text-white font-semibold text-xs inline-flex items-center gap-1.5 shadow-xs"
+              >
+                <Search className="w-3.5 h-3.5" />
+                <span>{language === "hi" ? "नज़दीकी डॉक्टर खोजें" : "Find Nearby Doctor"}</span>
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-3.5">
+              {bookedAppointments.map((apt) => (
+                <div
+                  key={apt.id}
+                  className="bg-white rounded-2xl border border-border p-5 shadow-xs hover:border-brand-primary/40 transition-all space-y-4"
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border pb-3">
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-xs font-bold px-2.5 py-1 rounded-lg bg-brand-primary/10 text-brand-primary border border-brand-primary/20">
+                        {apt.tokenNumber}
+                      </span>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200">
+                        {apt.status.toUpperCase()}
+                      </span>
+                    </div>
+                    <span className="text-xs text-text-muted">
+                      {language === "hi" ? "पंजीकृत मरीज" : "Patient"}: <strong className="text-text-main">{apt.patientName}</strong> ({apt.relationship})
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 text-xs">
+                    <div className="space-y-0.5">
+                      <span className="text-text-muted text-[10px] uppercase font-semibold">Doctor & Specialty</span>
+                      <div className="font-bold text-text-main">{apt.doctorName}</div>
+                      <div className="text-text-muted text-[11px]">{apt.specialty}</div>
+                    </div>
+                    <div className="space-y-0.5">
+                      <span className="text-text-muted text-[10px] uppercase font-semibold">Hospital / Clinic</span>
+                      <div className="font-bold text-text-main">{apt.hospitalName}</div>
+                      <div className="text-emerald-700 text-[11px] font-medium flex items-center gap-1">
+                        <ShieldCheck className="w-3 h-3" />
+                        <span>Verified OPD Center</span>
+                      </div>
+                    </div>
+                    <div className="space-y-0.5">
+                      <span className="text-text-muted text-[10px] uppercase font-semibold">Appointment Time</span>
+                      <div className="font-bold text-brand-primary flex items-center gap-1">
+                        <Clock className="w-3.5 h-3.5" />
+                        <span>{apt.slotDate} • {apt.slotTime}</span>
+                      </div>
+                      <div className="text-text-muted text-[11px]">Fee: ₹{apt.consultationFee} (Pay at clinic)</div>
+                    </div>
+                  </div>
+
+                  <div className="p-2.5 rounded-xl bg-surface/60 border border-border text-xs flex items-start gap-2">
+                    <FileText className="w-3.5 h-3.5 text-text-muted flex-shrink-0 mt-0.5" />
+                    <div>
+                      <span className="font-semibold text-text-main">
+                        {language === "hi" ? "मुख्य लक्षण / समस्या" : "Chief Complaint"}:
+                      </span>{" "}
+                      <span className="text-text-muted">{apt.chiefComplaint}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-border">
+                    <div className="text-[11px] text-text-muted flex items-center gap-1">
+                      <Key className="w-3.5 h-3.5 text-amber-600" />
+                      <span>
+                        {language === "hi"
+                          ? "अस्पताल में डॉक्टर को अपना 15-मिनट सुरक्षा कोड दिखाएं।"
+                          : "Present dynamic 15-min code to doctor on arrival to share past records."}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleCancelAppointment(apt.id)}
+                        className="px-3 py-1.5 rounded-xl border border-red-200 text-red-700 hover:bg-red-50 text-xs font-semibold transition-colors"
+                      >
+                        {language === "hi" ? "रद्द करें" : "Cancel"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setConfirmedPass(apt)}
+                        className="px-3.5 py-1.5 rounded-xl bg-brand-primary text-white text-xs font-semibold hover:bg-brand-primary/90 transition-all flex items-center gap-1 shadow-xs"
+                      >
+                        <Printer className="w-3.5 h-3.5" />
+                        <span>{language === "hi" ? "ओपीडी पर्ची देखें" : "View OPD Pass"}</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* TAB 1: HEALTH PROFILE & FILES (CRISP, MINIMAL, ZERO JARGON, DIRECT PEN EDITING) */}
       {activeTab === "report" && (
@@ -1496,14 +2148,18 @@ IIIT Delhi Medical Centre Central Registry
 
       {/* TAB 4: FIND DOCTOR */}
       {activeTab === "doctor" && (
-        <div className="bg-white rounded-2xl border border-border p-6 shadow-sm space-y-6 animate-fade-in">
+        <div className="bg-white rounded-2xl border border-border p-6 shadow-xs space-y-6 animate-fade-in">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <h2 className="text-base font-bold text-text-main">
-                Find Verified Doctors (IIIT Delhi Network)
+                {language === "hi"
+                  ? "सत्यापित डॉक्टर खोजें व ओपीडी स्लॉट बुक करें"
+                  : "Find Verified Doctors & Book OPD Consultation"}
               </h2>
               <p className="text-xs text-text-muted mt-1 leading-relaxed">
-                Search by symptoms, specialty, or clinic proximity. Sort by consultation fees and nearby locations.
+                {language === "hi"
+                  ? "वरिष्ठ अनुभवी विशेषज्ञ डॉक्टर प्राथमिकता पर। क्लिनिक दूरी, फीस और ओपीडी स्लॉट के अनुसार छाँटें।"
+                  : "Senior experienced specialists ranked first. Filter by specialty, consultation fees, and proximity."}
               </p>
             </div>
             <div className="text-xs text-text-muted font-medium">
@@ -1518,7 +2174,11 @@ IIIT Delhi Medical Centre Central Registry
               <Search className="w-4 h-4 text-text-muted absolute left-3.5 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
-                placeholder="Search by symptom (e.g. chest discomfort, fever, diabetes), specialty, or location..."
+                placeholder={
+                  language === "hi"
+                    ? "लक्षण (खांसी, बुखार, सीने में दर्द), डॉक्टर का नाम या क्षेत्र खोजें..."
+                    : "Search by symptom (e.g. chest discomfort, fever, diabetes), specialty, or location..."
+                }
                 value={searchSymptom}
                 onChange={(e) => setSearchSymptom(e.target.value)}
                 className="w-full pl-10 pr-9 py-2.5 rounded-xl bg-surface/50 border border-border text-xs text-text-main focus:outline-hidden focus:border-brand-primary"
@@ -1534,8 +2194,30 @@ IIIT Delhi Medical Centre Central Registry
               )}
             </div>
 
-            {/* Sort by Price & Location Buttons */}
-            <div className="flex items-center gap-2 flex-shrink-0">
+            {/* Sort by Experience, Price & Location Buttons */}
+            <div className="flex flex-wrap items-center gap-2 flex-shrink-0">
+              {/* Sort by Experience (Senior Doctors on Top) */}
+              <button
+                type="button"
+                onClick={handleToggleExpSort}
+                className={`px-3 py-2.5 rounded-xl border text-xs font-semibold flex items-center gap-1.5 transition-all shadow-xs ${
+                  expSort !== "none"
+                    ? "bg-brand-primary text-white border-brand-primary"
+                    : "bg-surface/60 hover:bg-surface border-border text-text-main"
+                }`}
+                title="Sort senior experienced doctors to the top"
+              >
+                <Activity className="w-3.5 h-3.5" />
+                <span>
+                  {expSort === "desc"
+                    ? (language === "hi" ? "वरिष्ठ डॉक्टर पहले (15+ वर्ष)" : "Senior Doctors First (Exp)")
+                    : expSort === "asc"
+                    ? (language === "hi" ? "जूनियर डॉक्टर पहले" : "Junior OPD Doctors")
+                    : (language === "hi" ? "अनुभव अनुसार" : "Sort Exp")}
+                </span>
+                <ArrowUpDown className="w-3 h-3 opacity-70" />
+              </button>
+
               {/* Sort by Price */}
               <button
                 type="button"
@@ -1581,12 +2263,13 @@ IIIT Delhi Medical Centre Central Registry
               </button>
 
               {/* Reset Sort / Filter */}
-              {(priceSort !== "none" || locationSort !== "none" || searchSymptom) && (
+              {(priceSort !== "none" || locationSort !== "none" || expSort !== "desc" || searchSymptom) && (
                 <button
                   type="button"
                   onClick={() => {
                     setPriceSort("none");
                     setLocationSort("none");
+                    setExpSort("desc");
                     setSearchSymptom("");
                   }}
                   className="p-2.5 rounded-xl bg-surface hover:bg-surface/80 border border-border text-text-muted hover:text-text-main transition-colors text-xs font-medium"
@@ -1599,9 +2282,22 @@ IIIT Delhi Medical Centre Central Registry
           </div>
 
           {/* Active Filter Chips */}
-          {(priceSort !== "none" || locationSort !== "none") && (
-            <div className="flex items-center gap-2 text-xs">
+          {(expSort !== "none" || priceSort !== "none" || locationSort !== "none") && (
+            <div className="flex flex-wrap items-center gap-2 text-xs">
               <span className="text-text-muted text-[11px]">Active Sorting:</span>
+              {expSort !== "none" && (
+                <span className="px-2.5 py-1 rounded-lg bg-blue-50 text-blue-800 border border-blue-200 font-medium flex items-center gap-1">
+                  <Activity className="w-3 h-3 text-brand-primary" />
+                  <span>{expSort === "desc" ? "Senior Doctors First (High Experience)" : "Junior OPD Doctors First"}</span>
+                  <button
+                    type="button"
+                    onClick={() => setExpSort("none")}
+                    className="hover:text-red-600 ml-1 font-bold"
+                  >
+                    ×
+                  </button>
+                </span>
+              )}
               {priceSort !== "none" && (
                 <span className="px-2.5 py-1 rounded-lg bg-brand-primary/10 text-brand-primary border border-brand-primary/20 font-medium flex items-center gap-1">
                   <IndianRupee className="w-3 h-3" />
@@ -1642,6 +2338,7 @@ IIIT Delhi Medical Centre Central Registry
                 onClick={() => {
                   setPriceSort("none");
                   setLocationSort("none");
+                  setExpSort("desc");
                   setSearchSymptom("");
                 }}
                 className="mt-2 px-3 py-1.5 rounded-xl bg-brand-primary text-white font-semibold text-xs inline-flex items-center gap-1 shadow-xs"
@@ -1656,11 +2353,19 @@ IIIT Delhi Medical Centre Central Registry
                   key={doc.id}
                   className="p-4 sm:p-5 rounded-2xl bg-surface/30 border border-border hover:border-brand-primary/50 transition-all flex flex-col justify-between space-y-3.5 shadow-xs"
                 >
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-surface text-brand-primary border border-border">
-                        {doc.hospitalName}
-                      </span>
+                  <div className="space-y-2.5">
+                    <div className="flex flex-wrap items-center justify-between gap-1.5">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-surface text-brand-primary border border-border">
+                          {doc.hospitalName}
+                        </span>
+                        {doc.isSponsored && (
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200 flex items-center gap-1">
+                            <ShieldCheck className="w-3 h-3 text-emerald-600" />
+                            <span>{doc.sponsoredBadge || "Verified Partner"}</span>
+                          </span>
+                        )}
+                      </div>
                       <span className="text-xs font-bold text-brand-primary flex items-center gap-0.5">
                         <IndianRupee className="w-3 h-3" />
                         <span>{doc.consultationFee}</span>
@@ -1669,9 +2374,19 @@ IIIT Delhi Medical Centre Central Registry
 
                     <div>
                       <h3 className="text-sm font-bold text-text-main">{doc.name}</h3>
-                      <div className="text-xs font-semibold text-text-muted mt-0.5">
-                        {doc.specialty} • {doc.experienceYears} yrs exp
+                      <div className="text-xs font-semibold text-text-muted mt-0.5 flex items-center gap-1.5">
+                        <span>{doc.specialty}</span>
+                        <span>•</span>
+                        <span className="font-bold text-text-main">{doc.experienceYears} yrs exp</span>
                       </div>
+                    </div>
+
+                    <div className="flex items-center gap-1 text-[11px] text-text-muted">
+                      <MapPin className="w-3 h-3 text-emerald-600 flex-shrink-0" />
+                      <span>{doc.location}</span>
+                      {doc.distanceKm && (
+                        <span className="font-semibold text-emerald-700">({doc.distanceKm} km away)</span>
+                      )}
                     </div>
 
                     <p className="text-[11px] text-text-muted leading-relaxed line-clamp-2">
@@ -1679,10 +2394,19 @@ IIIT Delhi Medical Centre Central Registry
                     </p>
                   </div>
 
-                  <div className="pt-2 border-t border-border flex items-center justify-end text-xs">
-                    <span className="text-[11px] text-brand-primary font-semibold">
-                      {doc.availableNext}
+                  <div className="pt-2.5 border-t border-border flex items-center justify-between text-xs">
+                    <span className="text-[11px] text-emerald-700 font-semibold flex items-center gap-1">
+                      <Clock className="w-3 h-3" />
+                      <span>{doc.availableNext}</span>
                     </span>
+                    <button
+                      type="button"
+                      onClick={() => handleStartBooking(doc)}
+                      className="px-3.5 py-1.5 rounded-xl bg-brand-primary text-white font-semibold text-xs hover:bg-brand-primary/90 transition-all flex items-center gap-1 shadow-xs"
+                    >
+                      <Calendar className="w-3.5 h-3.5" />
+                      <span>{language === "hi" ? "अपॉइंटमेंट लें" : "Book OPD Slot"}</span>
+                    </button>
                   </div>
                 </div>
               ))}
@@ -2665,6 +3389,547 @@ IIIT Delhi Medical Centre Central Registry
                   Close Report
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: ADD FAMILY MEMBER UNDER +91 98765 43210 */}
+      {showAddMemberModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-fade-in">
+          <div className="bg-white rounded-2xl border border-border p-6 max-w-md w-full shadow-2xl space-y-4 text-xs">
+            <div className="flex items-center justify-between border-b border-border pb-3">
+              <div className="flex items-center gap-2">
+                <Users className="w-4 h-4 text-brand-primary" />
+                <h3 className="text-sm font-bold text-text-main">
+                  {language === "hi" ? "परिवार का नया सदस्य जोड़ें" : "Add Family Member (+91 98765 43210)"}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowAddMemberModal(false)}
+                className="p-1 rounded text-text-muted hover:text-text-main"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateFamilyMember} className="space-y-3">
+              <div>
+                <label className="block text-text-muted font-medium mb-1">
+                  {language === "hi" ? "सदस्य का पूरा नाम" : "Full Name"} *
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g., Aarti Devi, Suresh Kumar"
+                  value={newMemberName}
+                  onChange={(e) => setNewMemberName(e.target.value)}
+                  className="w-full p-2.5 rounded-xl bg-surface/50 border border-border text-text-main focus:outline-hidden focus:border-brand-primary"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-text-muted font-medium mb-1">
+                    {language === "hi" ? "उम्र (वर्ष)" : "Age"} *
+                  </label>
+                  <input
+                    type="number"
+                    required
+                    min="0"
+                    max="120"
+                    placeholder="e.g., 34"
+                    value={newMemberAge}
+                    onChange={(e) => setNewMemberAge(Number(e.target.value) || 0)}
+                    className="w-full p-2.5 rounded-xl bg-surface/50 border border-border text-text-main focus:outline-hidden focus:border-brand-primary"
+                  />
+                </div>
+                <div>
+                  <label className="block text-text-muted font-medium mb-1">
+                    {language === "hi" ? "लिंग" : "Gender"}
+                  </label>
+                  <select
+                    value={newMemberGender}
+                    onChange={(e) => setNewMemberGender(e.target.value as "Male" | "Female" | "Other")}
+                    className="w-full p-2.5 rounded-xl bg-surface/50 border border-border text-text-main focus:outline-hidden focus:border-brand-primary"
+                  >
+                    <option value="Male">Male / पुरुष</option>
+                    <option value="Female">Female / महिला</option>
+                    <option value="Other">Other / अन्य</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-text-muted font-medium mb-1">
+                    {language === "hi" ? "पारिवारिक संबंध" : "Relationship"}
+                  </label>
+                  <select
+                    value={newMemberRel}
+                    onChange={(e) => setNewMemberRel(e.target.value as any)}
+                    className="w-full p-2.5 rounded-xl bg-surface/50 border border-border text-text-main focus:outline-hidden focus:border-brand-primary"
+                  >
+                    <option value="Spouse">Spouse / जीवनसाथी</option>
+                    <option value="Father">Father / पिता</option>
+                    <option value="Mother">Mother / माता</option>
+                    <option value="Son">Son / बेटा</option>
+                    <option value="Daughter">Daughter / बेटी</option>
+                    <option value="Self">Self / स्वयं</option>
+                    <option value="Other">Other / अन्य</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-text-muted font-medium mb-1">
+                    {language === "hi" ? "रक्त समूह" : "Blood Group"}
+                  </label>
+                  <select
+                    value={newMemberBlood}
+                    onChange={(e) => setNewMemberBlood(e.target.value)}
+                    className="w-full p-2.5 rounded-xl bg-surface/50 border border-border text-text-main focus:outline-hidden focus:border-brand-primary"
+                  >
+                    <option value="O+">O+</option>
+                    <option value="A+">A+</option>
+                    <option value="B+">B+</option>
+                    <option value="AB+">AB+</option>
+                    <option value="O-">O-</option>
+                    <option value="A-">A-</option>
+                    <option value="B-">B-</option>
+                    <option value="AB-">AB-</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-text-muted font-medium mb-1">
+                  {language === "hi" ? "ज्ञात एलर्जी (यदि कोई हो)" : "Known Allergies (Optional)"}
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g., Penicillin, Peanuts, Sulfa (leave empty if none)"
+                  value={newMemberAllergies}
+                  onChange={(e) => setNewMemberAllergies(e.target.value)}
+                  className="w-full p-2.5 rounded-xl bg-surface/50 border border-border text-text-main focus:outline-hidden focus:border-brand-primary"
+                />
+              </div>
+
+              <div className="p-3 rounded-xl bg-surface border border-border text-[11px] text-text-muted flex items-start gap-2">
+                <ShieldCheck className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
+                <span>
+                  {language === "hi"
+                    ? "इस सदस्य का अलग प्रोफ़ाइल और नया 15-मिनट डायनामिक सुरक्षा कोड स्वतः सक्रिय होगा।"
+                    : "This member will have completely isolated past records and an independent 15-minute access code."}
+                </span>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowAddMemberModal(false)}
+                  className="px-3.5 py-2 rounded-xl bg-surface hover:bg-surface/80 border border-border text-text-main font-semibold"
+                >
+                  {language === "hi" ? "रद्द करें" : "Cancel"}
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 rounded-xl bg-brand-primary text-white font-semibold hover:bg-brand-primary/90 transition-all shadow-xs"
+                >
+                  {language === "hi" ? "सदस्य जोड़ें" : "Create Member Profile"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: LOG PAST ORGAN CONDITION */}
+      {showAddOrganModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-fade-in">
+          <div className="bg-white rounded-2xl border border-border p-6 max-w-lg w-full shadow-2xl space-y-4 text-xs">
+            <div className="flex items-center justify-between border-b border-border pb-3">
+              <div className="flex items-center gap-2">
+                <Activity className="w-4 h-4 text-emerald-600" />
+                <h3 className="text-sm font-bold text-text-main">
+                  {language === "hi"
+                    ? `पुरानी बीमारी दर्ज करें: ${activeMember.name}`
+                    : `Log Past Organ Condition: ${activeMember.name}`}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowAddOrganModal(false)}
+                className="p-1 rounded text-text-muted hover:text-text-main"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleAddOrganCondition} className="space-y-3">
+              <div>
+                <label className="block text-text-muted font-medium mb-1">
+                  {language === "hi" ? "शरीर का अंग / तंत्र (Organ System)" : "Organ System"} *
+                </label>
+                <select
+                  value={newOrganSystem}
+                  onChange={(e) => setNewOrganSystem(e.target.value as OrganSystem)}
+                  className="w-full p-2.5 rounded-xl bg-surface/50 border border-border text-text-main focus:outline-hidden focus:border-brand-primary"
+                >
+                  <option value="Cardiovascular (Heart)">Cardiovascular (हृदय व रक्तचाप)</option>
+                  <option value="Respiratory (Lungs)">Respiratory (फेफड़े व श्वास)</option>
+                  <option value="Gastrointestinal (Stomach & Liver)">Gastrointestinal (पेट, लिवर व पाचन)</option>
+                  <option value="Endocrine (Diabetes & Thyroid)">Endocrine (ग्रंथि, थायराइड व शुगर)</option>
+                  <option value="Renal (Kidneys)">Renal (गुर्दे व किडनी)</option>
+                  <option value="Musculoskeletal (Bones & Joints)">Musculoskeletal (हड्डियाँ व जोड़)</option>
+                  <option value="Neurological (Brain & Nerves)">Neurological (मस्तिष्क व तंत्रिका)</option>
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-text-muted font-medium mb-1">
+                    {language === "hi" ? "बीमारी का नाम" : "Condition / Disease Name"} *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g., Bronchial Asthma, Peptic Ulcer"
+                    value={newConditionName}
+                    onChange={(e) => setNewConditionName(e.target.value)}
+                    className="w-full p-2.5 rounded-xl bg-surface/50 border border-border text-text-main focus:outline-hidden focus:border-brand-primary"
+                  />
+                </div>
+                <div>
+                  <label className="block text-text-muted font-medium mb-1">
+                    {language === "hi" ? "निदान का वर्ष" : "Diagnosed Year"} *
+                  </label>
+                  <input
+                    type="number"
+                    min="1950"
+                    max={new Date().getFullYear()}
+                    required
+                    placeholder={new Date().getFullYear().toString()}
+                    value={newDiagnosedYear}
+                    onChange={(e) => setNewDiagnosedYear(e.target.value)}
+                    className="w-full p-2.5 rounded-xl bg-surface/50 border border-border text-text-main focus:outline-hidden focus:border-brand-primary"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-text-muted font-medium mb-1">
+                    {language === "hi" ? "वर्तमान स्थिति" : "Current Status"}
+                  </label>
+                  <select
+                    value={newStatus}
+                    onChange={(e) => setNewStatus(e.target.value as any)}
+                    className="w-full p-2.5 rounded-xl bg-surface/50 border border-border text-text-main focus:outline-hidden focus:border-brand-primary"
+                  >
+                    <option value="Active">Active (सक्रिय - इलाज जारी)</option>
+                    <option value="Managed">Managed (नियंत्रित)</option>
+                    <option value="Resolved">Resolved (ठीक हो चुकी है)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-text-muted font-medium mb-1">
+                    {language === "hi" ? "गंभीरता" : "Severity"}
+                  </label>
+                  <select
+                    value={newSeverity}
+                    onChange={(e) => setNewSeverity(e.target.value as any)}
+                    className="w-full p-2.5 rounded-xl bg-surface/50 border border-border text-text-main focus:outline-hidden focus:border-brand-primary"
+                  >
+                    <option value="Mild">Mild (हल्की)</option>
+                    <option value="Moderate">Moderate (मध्यम)</option>
+                    <option value="Severe">Severe (गंभीर / क्रोनिक)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-text-muted font-medium mb-1">
+                  {language === "hi" ? "लक्षण व विवरण" : "Clinical Notes / Triggers"}
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g., Cold weather triggers attacks, daily morning inhaler"
+                  value={newClinicalNotes}
+                  onChange={(e) => setNewClinicalNotes(e.target.value)}
+                  className="w-full p-2.5 rounded-xl bg-surface/50 border border-border text-text-main focus:outline-hidden focus:border-brand-primary"
+                />
+              </div>
+
+              <div>
+                <label className="block text-text-muted font-medium mb-1">
+                  <span className="text-amber-800 font-bold">
+                    {language === "hi"
+                      ? "भविष्य की बीमारियों के लिए डॉक्टर हेतु चेतावनी (Contraindication)"
+                      : "Cross-Referencing Advisory for Future Doctor Visits"}
+                  </span>
+                </label>
+                <textarea
+                  rows={2}
+                  placeholder="e.g., AVOID Beta-Blockers (Atenolol/Propranolol) in cardiac visits as they aggravate bronchospasm."
+                  value={newFutureRisk}
+                  onChange={(e) => setNewFutureRisk(e.target.value)}
+                  className="w-full p-2.5 rounded-xl bg-amber-50/50 border border-amber-200 text-text-main focus:outline-hidden focus:border-amber-500 text-xs"
+                />
+                <span className="text-[10px] text-text-muted">
+                  {language === "hi"
+                    ? "यह चेतावनी डॉक्टर को भविष्य में गलत या नुकसानदेह दवा लिखने से रोकेगी।"
+                    : "Alerts visiting clinicians of high-risk drug interactions or contraindicated treatments."}
+                </span>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowAddOrganModal(false)}
+                  className="px-3.5 py-2 rounded-xl bg-surface hover:bg-surface/80 border border-border text-text-main font-semibold"
+                >
+                  {language === "hi" ? "रद्द करें" : "Cancel"}
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 rounded-xl bg-brand-primary text-white font-semibold hover:bg-brand-primary/90 transition-all shadow-xs"
+                >
+                  {language === "hi" ? "बीमारी रिकॉर्ड करें" : "Save Condition"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: BOOK CONSULTATION WITH DOCTOR */}
+      {showBookingModal && bookingDoctor && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-fade-in">
+          <div className="bg-white rounded-2xl border border-border p-6 max-w-md w-full shadow-2xl space-y-4 text-xs">
+            <div className="flex items-center justify-between border-b border-border pb-3">
+              <div className="flex items-center gap-2">
+                <Calendar className="w-4 h-4 text-brand-primary" />
+                <h3 className="text-sm font-bold text-text-main">
+                  {language === "hi" ? "ओपीडी अपॉइंटमेंट स्लॉट बुक करें" : "Book OPD Consultation Slot"}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowBookingModal(false)}
+                className="p-1 rounded text-text-muted hover:text-text-main"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Doctor Mini Card */}
+            <div className="p-3 rounded-xl bg-surface border border-border space-y-1">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-text-main">{bookingDoctor.name}</span>
+                <span className="font-bold text-brand-primary flex items-center gap-0.5">
+                  <IndianRupee className="w-3 h-3" />
+                  <span>{bookingDoctor.consultationFee}</span>
+                </span>
+              </div>
+              <div className="text-[11px] text-text-muted">
+                {bookingDoctor.specialty} • {bookingDoctor.experienceYears} yrs experience
+              </div>
+              <div className="text-[11px] text-emerald-700 font-medium">
+                {bookingDoctor.hospitalName} ({bookingDoctor.location})
+              </div>
+            </div>
+
+            <form onSubmit={handleConfirmBooking} className="space-y-3">
+              <div>
+                <label className="block text-text-muted font-medium mb-1">
+                  {language === "hi" ? "किस सदस्य के लिए अपॉइंटमेंट है?" : "Select Patient (Family Member)"} *
+                </label>
+                <select
+                  value={bookingPatientId}
+                  onChange={(e) => setBookingPatientId(e.target.value)}
+                  className="w-full p-2.5 rounded-xl bg-surface/50 border border-border text-text-main focus:outline-hidden focus:border-brand-primary"
+                >
+                  {familyMembers.map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.name} ({m.relationship}, {m.age} yrs, {m.gender})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-text-muted font-medium mb-1">
+                    {language === "hi" ? "तारीख" : "Date"} *
+                  </label>
+                  <select
+                    value={bookingDate}
+                    onChange={(e) => setBookingDate(e.target.value)}
+                    className="w-full p-2.5 rounded-xl bg-surface/50 border border-border text-text-main focus:outline-hidden focus:border-brand-primary"
+                  >
+                    <option value="Today, 29 Oct 2026">Today, 29 Oct 2026</option>
+                    <option value="Tomorrow, 30 Oct 2026">Tomorrow, 30 Oct 2026</option>
+                    <option value="Saturday, 31 Oct 2026">Saturday, 31 Oct 2026</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-text-muted font-medium mb-1">
+                    {language === "hi" ? "समय स्लॉट" : "Time Slot"} *
+                  </label>
+                  <select
+                    value={bookingSlot}
+                    onChange={(e) => setBookingSlot(e.target.value)}
+                    className="w-full p-2.5 rounded-xl bg-surface/50 border border-border text-text-main focus:outline-hidden focus:border-brand-primary"
+                  >
+                    <option value="10:00 AM (Morning)">10:00 AM (Morning)</option>
+                    <option value="02:00 PM (Afternoon)">02:00 PM (Afternoon)</option>
+                    <option value="04:30 PM (Evening)">04:30 PM (Evening)</option>
+                    <option value="06:00 PM (Evening)">06:00 PM (Evening)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-text-muted font-medium mb-1">
+                  {language === "hi" ? "बीमारी या मुख्य परेशानी (लक्षण)" : "Chief Complaint / Health Issue"} *
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g., High fever for 2 days, persistent cough, chest tightness"
+                  value={bookingComplaint}
+                  onChange={(e) => setBookingComplaint(e.target.value)}
+                  className="w-full p-2.5 rounded-xl bg-surface/50 border border-border text-text-main focus:outline-hidden focus:border-brand-primary"
+                />
+              </div>
+
+              <div className="p-3 rounded-xl bg-surface border border-border text-[11px] text-text-muted space-y-1">
+                <div className="font-semibold text-text-main flex items-center gap-1">
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>Instant Digital Token Generation</span>
+                </div>
+                <p>
+                  {language === "hi"
+                    ? "बुकिंग के तुरंत बाद आपको ओपीडी टोकन नंबर प्राप्त होगा जिसे अस्पताल के स्वागत कक्ष पर दिखाना होगा।"
+                    : "A digital token number will be generated immediately for zero-queue entry at hospital OPD reception."}
+                </p>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowBookingModal(false)}
+                  className="px-3.5 py-2 rounded-xl bg-surface hover:bg-surface/80 border border-border text-text-main font-semibold"
+                >
+                  {language === "hi" ? "रद्द करें" : "Cancel"}
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 rounded-xl bg-brand-primary text-white font-semibold hover:bg-brand-primary/90 transition-all shadow-xs"
+                >
+                  {language === "hi" ? "टोकन कन्फर्म करें" : "Confirm OPD Token"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: CONFIRMED OPD APPOINTMENT PASS */}
+      {confirmedPass && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-fade-in">
+          <div className="bg-white rounded-2xl border border-border p-6 max-w-md w-full shadow-2xl space-y-4 text-xs">
+            <div className="flex items-center justify-between border-b border-border pb-3">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                <div>
+                  <h3 className="text-sm font-bold text-text-main">
+                    {language === "hi" ? "ओपीडी अपॉइंटमेंट पास (टोकन)" : "Official OPD Appointment Pass"}
+                  </h3>
+                  <span className="text-[10px] text-emerald-700 font-semibold">
+                    {language === "hi" ? "सफलतापूर्वक बुक हो गया" : "Verified Booking Confirmed"}
+                  </span>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setConfirmedPass(null)}
+                className="p-1 rounded text-text-muted hover:text-text-main"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Token Banner */}
+            <div className="p-4 rounded-xl bg-surface border border-brand-accent/40 text-center space-y-1">
+              <span className="text-[10px] uppercase font-bold text-text-muted tracking-wider">
+                {language === "hi" ? "आपका ओपीडी टोकन नंबर" : "OPD Queue Token Number"}
+              </span>
+              <div className="font-mono text-2xl font-black text-brand-primary tracking-widest">
+                {confirmedPass.tokenNumber}
+              </div>
+              <span className="text-[11px] text-emerald-700 font-medium block">
+                Priority OPD Queue Status: Confirmed
+              </span>
+            </div>
+
+            {/* Pass Details */}
+            <div className="space-y-2 p-3.5 rounded-xl bg-surface/50 border border-border text-xs">
+              <div className="flex justify-between py-1 border-b border-border/60">
+                <span className="text-text-muted">{language === "hi" ? "मरीज" : "Patient"}:</span>
+                <strong className="text-text-main">{confirmedPass.patientName} ({confirmedPass.relationship})</strong>
+              </div>
+              <div className="flex justify-between py-1 border-b border-border/60">
+                <span className="text-text-muted">{language === "hi" ? "डॉक्टर" : "Doctor"}:</span>
+                <strong className="text-text-main">{confirmedPass.doctorName}</strong>
+              </div>
+              <div className="flex justify-between py-1 border-b border-border/60">
+                <span className="text-text-muted">{language === "hi" ? "अस्पताल" : "Hospital"}:</span>
+                <span className="text-text-main font-medium">{confirmedPass.hospitalName}</span>
+              </div>
+              <div className="flex justify-between py-1 border-b border-border/60">
+                <span className="text-text-muted">{language === "hi" ? "समय व तारीख" : "Slot"}:</span>
+                <span className="text-brand-primary font-bold">{confirmedPass.slotDate} • {confirmedPass.slotTime}</span>
+              </div>
+              <div className="flex justify-between py-1 border-b border-border/60">
+                <span className="text-text-muted">{language === "hi" ? "फीस" : "Consultation Fee"}:</span>
+                <span className="text-text-main font-bold">₹{confirmedPass.consultationFee} (Pay at clinic)</span>
+              </div>
+              <div className="flex justify-between py-1">
+                <span className="text-text-muted">{language === "hi" ? "समस्या" : "Chief Issue"}:</span>
+                <span className="text-text-main font-medium">{confirmedPass.chiefComplaint}</span>
+              </div>
+            </div>
+
+            {/* Dynamic Code Reminder */}
+            <div className="p-3 rounded-xl bg-amber-50/70 border border-amber-200 text-[11px] text-amber-900 flex items-start gap-2">
+              <Key className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+              <p className="leading-relaxed">
+                {language === "hi"
+                  ? "अस्पताल पहुँचकर डॉक्टर को अपने मरीज पोर्टल का 15-मिनट सुरक्षा कोड बताएं ताकि डॉक्टर आपका पुराना मेडिकल इतिहास सुरक्षित देख सकें।"
+                  : "Present this token at the reception. The doctor will verify your 15-minute dynamic code to safely access your past organ conditions."}
+              </p>
+            </div>
+
+            <div className="flex items-center justify-between pt-2 border-t border-border">
+              <button
+                type="button"
+                onClick={() => window.print()}
+                className="px-3.5 py-2 rounded-xl bg-surface hover:bg-surface/80 border border-border text-text-main font-semibold flex items-center gap-1.5 transition-colors"
+              >
+                <Printer className="w-3.5 h-3.5" />
+                <span>{language === "hi" ? "पर्ची प्रिंट करें" : "Print Pass"}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setConfirmedPass(null);
+                  setActiveTab("appointments");
+                }}
+                className="px-4 py-2 rounded-xl bg-brand-primary text-white font-semibold hover:bg-brand-primary/90 transition-all shadow-xs"
+              >
+                {language === "hi" ? "अपॉइंटमेंट्स में देखें" : "View in My Bookings"}
+              </button>
             </div>
           </div>
         </div>

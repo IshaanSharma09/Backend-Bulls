@@ -13,6 +13,8 @@ import {
   PatientHealthProfile,
   PatientLabFile,
   DigitalPrescription,
+  OrganConditionRecord,
+  FamilyMemberProfile,
 } from "../../lib/clinicalStore";
 import {
   Building2,
@@ -38,6 +40,11 @@ import {
   Trash2,
   Edit3,
   UserPlus,
+  Heart,
+  Wind,
+  Flame,
+  Activity,
+  Shield,
   ArrowRight,
   Eye,
   Download,
@@ -68,6 +75,8 @@ function DoctorHospitalDashboardContent() {
   const [lookupError, setLookupError] = useState<string | null>(null);
   const [unlockedPatient, setUnlockedPatient] = useState<{
     profile: PatientHealthProfile;
+    organConditions?: OrganConditionRecord[];
+    familyMember?: FamilyMemberProfile;
   } | null>(null);
 
   // Queue Notification & Modals
@@ -147,6 +156,8 @@ function DoctorHospitalDashboardContent() {
     if (res.profile) {
       setUnlockedPatient({
         profile: res.profile,
+        organConditions: res.organConditions || [],
+        familyMember: res.familyMember,
       });
       setPatientPrescriptions(res.prescriptions || clinicalStore.getDigitalPrescriptions(searchPatientId));
       setLookupError(null);
@@ -885,6 +896,64 @@ DIAGNOSTIC INTERPRETATION:
                   ))}
                 </div>
               </div>
+
+              {/* LONGITUDINAL ORGAN DISEASE HISTORY & CROSS-ORGAN WARNINGS */}
+              {unlockedPatient.organConditions && unlockedPatient.organConditions.length > 0 && (
+                <div className="p-4 rounded-xl bg-amber-50/60 border border-amber-200 text-text-main space-y-3 shadow-xs">
+                  <div className="flex items-center justify-between border-b border-amber-200/80 pb-2">
+                    <div className="flex items-center gap-2">
+                      <Activity className="w-4 h-4 text-amber-700" />
+                      <h4 className="font-bold text-xs text-amber-950 uppercase tracking-wide">
+                        Longitudinal Past Organ History & Cross-Organ Contraindication Alerts
+                      </h4>
+                    </div>
+                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-amber-100 text-amber-900 border border-amber-300">
+                      Cross-Referenced via 15-Min Dynamic Code
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+                    {unlockedPatient.organConditions.map((cond) => (
+                      <div
+                        key={cond.id}
+                        className="p-3 rounded-lg bg-white border border-amber-200/90 shadow-2xs space-y-1.5"
+                      >
+                        <div className="flex items-center justify-between text-[11px]">
+                          <span className="font-bold text-brand-primary flex items-center gap-1">
+                            {cond.organSystem.startsWith("Cardiovascular") && <Heart className="w-3.5 h-3.5 text-rose-600" />}
+                            {cond.organSystem.startsWith("Respiratory") && <Wind className="w-3.5 h-3.5 text-sky-600" />}
+                            {cond.organSystem.startsWith("Gastrointestinal") && <Flame className="w-3.5 h-3.5 text-amber-600" />}
+                            {cond.organSystem.startsWith("Endocrine") && <Activity className="w-3.5 h-3.5 text-emerald-600" />}
+                            {cond.organSystem.startsWith("Renal") && <Activity className="w-3.5 h-3.5 text-indigo-600" />}
+                            {cond.organSystem.startsWith("Musculoskeletal") && <Shield className="w-3.5 h-3.5 text-slate-600" />}
+                            <span>{cond.organSystem}</span>
+                          </span>
+                          <span className="text-[10px] px-1.5 py-0.2 rounded bg-surface border border-border text-text-muted">
+                            {cond.status} • {cond.diagnosedYear}
+                          </span>
+                        </div>
+
+                        <div className="font-bold text-xs text-text-main">
+                          {cond.conditionName}
+                        </div>
+
+                        {cond.clinicalNotes && (
+                          <p className="text-[11px] text-text-muted leading-relaxed">
+                            {cond.clinicalNotes}
+                          </p>
+                        )}
+
+                        {cond.futureRiskAlert && (
+                          <div className="p-2 rounded bg-amber-50 border border-amber-200 text-[11px] text-amber-950 font-medium flex items-start gap-1.5">
+                            <AlertTriangle className="w-3.5 h-3.5 text-amber-700 flex-shrink-0 mt-0.5" />
+                            <span>{cond.futureRiskAlert}</span>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* DIGITAL PRESCRIPTION & MEDICATION ORDER (ISSUE VIA 6-DIGIT CODE) */}
               <div className="rounded-xl border border-border bg-white p-4 space-y-3.5 shadow-sm">

@@ -188,6 +188,67 @@ export interface DigitalPrescription {
   auditHistory: PrescriptionAuditEntry[];
 }
 
+export type OrganSystem =
+  | "Cardiovascular (Heart)"
+  | "Respiratory (Lungs)"
+  | "Gastrointestinal (Stomach & Liver)"
+  | "Endocrine (Diabetes & Thyroid)"
+  | "Renal (Kidneys)"
+  | "Musculoskeletal (Bones & Joints)"
+  | "Neurological (Brain & Nerves)";
+
+export interface OrganConditionRecord {
+  id: string;
+  organSystem: OrganSystem;
+  conditionName: string;
+  diagnosedYear: string;
+  status: "Active" | "Managed" | "Resolved";
+  severity: "Mild" | "Moderate" | "Severe";
+  clinicalNotes: string;
+  futureRiskAlert: string;
+}
+
+export interface FamilyMemberProfile {
+  id: string;
+  relationship: "Self" | "Spouse" | "Father" | "Mother" | "Son" | "Daughter" | "Elderly Dependent";
+  name: string;
+  age: number;
+  gender: string;
+  bloodGroup: string;
+  phone: string;
+  abhaId?: string;
+  allergies: string[];
+  organConditions: OrganConditionRecord[];
+  currentMedicines: Array<{
+    id: string;
+    name: string;
+    dose: string;
+    frequency: string;
+    instructions: string;
+  }>;
+  prescriptions: DigitalPrescription[];
+  labFiles: PatientLabFile[];
+  accessCode: DynamicPatientAccessCode;
+}
+
+export interface BookedAppointment {
+  id: string;
+  tokenNumber: string;
+  patientId: string;
+  patientName: string;
+  relationship: string;
+  doctorId: string;
+  doctorName: string;
+  hospitalName: string;
+  specialty: string;
+  slotDate: string;
+  slotTime: string;
+  consultationFee: number;
+  chiefComplaint: string;
+  status: "Confirmed" | "Completed" | "Cancelled";
+  bookedAt: string;
+}
+
 export interface DoctorProfile {
   id: string;
   hospitalId: string;
@@ -204,6 +265,8 @@ export interface DoctorProfile {
   availableNext: string;
   location: string;
   distanceKm: number;
+  isSponsored?: boolean;
+  sponsoredBadge?: string;
 }
 
 // Initial Data for IIIT Delhi Hospital
@@ -601,6 +664,8 @@ const INITIAL_DOCTORS: DoctorProfile[] = [
     availableNext: "Available in OPD",
     location: "Okhla Phase III, New Delhi",
     distanceKm: 0.8,
+    isSponsored: true,
+    sponsoredBadge: "Verified Hospital Partner",
   },
   {
     id: "DOC-IIITD-02",
@@ -686,6 +751,8 @@ const INITIAL_DOCTORS: DoctorProfile[] = [
     availableNext: "Next Slot: Today 3:15 PM",
     location: "Jasola Vihar, South Delhi",
     distanceKm: 2.9,
+    isSponsored: true,
+    sponsoredBadge: "Sponsored Clinic Partner",
   },
   {
     id: "DOC-IIITD-07",
@@ -723,6 +790,297 @@ const INITIAL_DOCTORS: DoctorProfile[] = [
   },
 ];
 
+const INITIAL_FAMILY_MEMBERS: FamilyMemberProfile[] = [
+  {
+    id: "FAM-01",
+    relationship: "Self",
+    name: "Ramesh Kumar",
+    age: 42,
+    gender: "Male",
+    bloodGroup: "B+",
+    phone: "+91 98765 43210",
+    abhaId: "91-4821-3829-1920",
+    allergies: [
+      "Penicillin (Severe skin rash and swelling)",
+      "Ibuprofen / NSAIDs (Breathing tightness)",
+      "Dust and pollen (Mild seasonal allergy)",
+    ],
+    organConditions: [
+      {
+        id: "org-1",
+        organSystem: "Cardiovascular (Heart)",
+        conditionName: "Coronary Health Evaluation & Mild Ischemia",
+        diagnosedYear: "2022",
+        status: "Managed",
+        severity: "Moderate",
+        clinicalNotes: "Under routine antiplatelet maintenance. Resting pulse 72 bpm, BP 118/76 mmHg.",
+        futureRiskAlert: "Avoid sudden strenuous exertion. Monitor ECG prior to starting medications with QT prolongation.",
+      },
+      {
+        id: "org-2",
+        organSystem: "Respiratory (Lungs)",
+        conditionName: "Childhood Bronchial Asthma",
+        diagnosedYear: "2012",
+        status: "Resolved",
+        severity: "Mild",
+        clinicalNotes: "Occasional seasonal wheezing during harvest dust season. No recent hospital admissions.",
+        futureRiskAlert: "CRITICAL ALERT: Avoid non-cardioselective Beta-Blockers (Propranolol, Carvedilol) for future cardiac therapy; risks severe bronchospasm.",
+      },
+    ],
+    currentMedicines: [
+      {
+        id: "med-1",
+        name: "Aspirin Chewable",
+        dose: "75 mg",
+        frequency: "Once daily in morning",
+        instructions: "Take after breakfast with a full glass of water",
+      },
+      {
+        id: "med-2",
+        name: "Atorvastatin",
+        dose: "20 mg",
+        frequency: "Once daily at night",
+        instructions: "Take before sleep for lipid stabilization",
+      },
+    ],
+    prescriptions: INITIAL_DIGITAL_PRESCRIPTIONS,
+    labFiles: INITIAL_HEALTH_PROFILE.labFiles,
+    accessCode: {
+      patientId: "FAM-01",
+      code: "849201",
+      generatedAt: Date.now(),
+      expiresAt: Date.now() + 15 * 60 * 1000,
+      isActive: true,
+    },
+  },
+  {
+    id: "FAM-02",
+    relationship: "Spouse",
+    name: "Sunita Devi",
+    age: 39,
+    gender: "Female",
+    bloodGroup: "O+",
+    phone: "+91 98765 43210",
+    abhaId: "91-3849-2041-8812",
+    allergies: ["Sulfa antibiotics (Causes acute skin hives)"],
+    organConditions: [
+      {
+        id: "org-3",
+        organSystem: "Endocrine (Diabetes & Thyroid)",
+        conditionName: "Subclinical Hypothyroidism",
+        diagnosedYear: "2020",
+        status: "Active",
+        severity: "Mild",
+        clinicalNotes: "Maintained on Levothyroxine 25 mcg. TSH controlled at 3.1 mIU/L.",
+        futureRiskAlert: "Check TSH levels before starting any iodine-containing contrast agents or thyroid-suppressive drugs.",
+      },
+      {
+        id: "org-4",
+        organSystem: "Gastrointestinal (Stomach & Liver)",
+        conditionName: "Mild Iron Deficiency Anemia / Gastritis",
+        diagnosedYear: "2023",
+        status: "Managed",
+        severity: "Mild",
+        clinicalNotes: "Hemoglobin 11.4 g/dL. Dietary iron supplements prescribed with vitamin C.",
+        futureRiskAlert: "Take oral iron supplements on empty stomach; avoid co-administration with calcium or antacids.",
+      },
+    ],
+    currentMedicines: [
+      {
+        id: "med-sunita-1",
+        name: "Levothyroxine Sodium",
+        dose: "25 mcg",
+        frequency: "Once daily early morning",
+        instructions: "Take 30 minutes before breakfast with water",
+      },
+    ],
+    prescriptions: [
+      {
+        id: "rx-sunita-1",
+        patientId: "FAM-02",
+        medicationName: "Levothyroxine 25 mcg",
+        dosage: "1 tablet once daily morning fasting",
+        instructions: "Swallow whole with half cup water",
+        prescribedBy: "Dr. Priya Ramanathan (Endocrinology, Apollo Specialty Hospital)",
+        prescribedDate: "10 Oct 2026",
+        prescribedTime: "11:00 AM",
+        status: "Active",
+        version: 1,
+        auditHistory: [],
+      },
+    ],
+    labFiles: [
+      {
+        id: "file-sunita-1",
+        name: "Thyroid_Panel_Report.pdf",
+        category: "Blood Test",
+        date: "05 Oct 2026",
+        fileSize: "620 KB",
+        notes: "Free T4 1.2 ng/dL, TSH 3.1 mIU/L. Euthyroid state maintained.",
+      },
+    ],
+    accessCode: {
+      patientId: "FAM-02",
+      code: "721940",
+      generatedAt: Date.now(),
+      expiresAt: Date.now() + 15 * 60 * 1000,
+      isActive: true,
+    },
+  },
+  {
+    id: "FAM-03",
+    relationship: "Father",
+    name: "Ramprasad Kumar",
+    age: 68,
+    gender: "Male",
+    bloodGroup: "B+",
+    phone: "+91 98765 43210",
+    abhaId: "91-1182-9901-4432",
+    allergies: ["Diclofenac (Triggers severe stomach ulcer flare)"],
+    organConditions: [
+      {
+        id: "org-5",
+        organSystem: "Gastrointestinal (Stomach & Liver)",
+        conditionName: "Chronic Peptic Ulcer Disease (Duodenal)",
+        diagnosedYear: "2018",
+        status: "Managed",
+        severity: "Severe",
+        clinicalNotes: "Healed ulcer post-triple eradication therapy. Strict avoidance of all NSAID pain medications.",
+        futureRiskAlert: "CRITICAL WARNING: Absolute contraindication for NSAIDs (Ibuprofen, Combiflam, Diclofenac). Use Paracetamol for pain.",
+      },
+      {
+        id: "org-6",
+        organSystem: "Musculoskeletal (Bones & Joints)",
+        conditionName: "Bilateral Knee Osteoarthritis Grade 3",
+        diagnosedYear: "2019",
+        status: "Active",
+        severity: "Moderate",
+        clinicalNotes: "Severe joint pain on prolonged standing. Regular low-impact walking and knee strengthening recommended.",
+        futureRiskAlert: "Avoid oral steroids without blood sugar monitoring. Prefer topical analgesic gels over systemic NSAIDs.",
+      },
+      {
+        id: "org-7",
+        organSystem: "Renal (Kidneys)",
+        conditionName: "Age-Related Mild eGFR Reduction (Stage 2 CKD)",
+        diagnosedYear: "2023",
+        status: "Managed",
+        severity: "Mild",
+        clinicalNotes: "Serum Creatinine 1.3 mg/dL, eGFR 64 mL/min. Adequate daily hydration advised.",
+        futureRiskAlert: "Nephrology Alert: Dose-adjust all antibiotics and avoid nephrotoxic contrast agents without pre-hydration.",
+      },
+    ],
+    currentMedicines: [
+      {
+        id: "med-ramprasad-1",
+        name: "Pantoprazole Gastro-Resistant",
+        dose: "40 mg",
+        frequency: "Once daily before breakfast",
+        instructions: "Gastric mucosal protection",
+      },
+      {
+        id: "med-ramprasad-2",
+        name: "Glucosamine Sulphate",
+        dose: "500 mg",
+        frequency: "Twice daily after meals",
+        instructions: "Cartilage support for knees",
+      },
+    ],
+    prescriptions: [
+      {
+        id: "rx-ramprasad-1",
+        patientId: "FAM-03",
+        medicationName: "Pantoprazole 40mg",
+        dosage: "1 tablet daily 30 mins before breakfast",
+        instructions: "Acid suppression for ulcer prophylaxis",
+        prescribedBy: "Dr. Sunita Deshmukh (Gastroenterology, Sir Ganga Ram Hospital)",
+        prescribedDate: "12 Oct 2026",
+        prescribedTime: "02:30 PM",
+        status: "Active",
+        version: 1,
+        auditHistory: [],
+      },
+    ],
+    labFiles: [
+      {
+        id: "file-ramprasad-1",
+        name: "Kidney_Function_Test.pdf",
+        category: "Blood Test",
+        date: "08 Oct 2026",
+        fileSize: "910 KB",
+        notes: "Urea 38 mg/dL, Creatinine 1.3 mg/dL, Sodium 138 mEq/L, Potassium 4.2 mEq/L.",
+      },
+    ],
+    accessCode: {
+      patientId: "FAM-03",
+      code: "639201",
+      generatedAt: Date.now(),
+      expiresAt: Date.now() + 15 * 60 * 1000,
+      isActive: true,
+    },
+  },
+  {
+    id: "FAM-04",
+    relationship: "Son",
+    name: "Aarav Kumar",
+    age: 12,
+    gender: "Male",
+    bloodGroup: "O+",
+    phone: "+91 98765 43210",
+    abhaId: "91-9921-3810-7712",
+    allergies: ["Peanuts (Mild facial hives)"],
+    organConditions: [
+      {
+        id: "org-8",
+        organSystem: "Respiratory (Lungs)",
+        conditionName: "Seasonal Allergic Rhinitis",
+        diagnosedYear: "2024",
+        status: "Active",
+        severity: "Mild",
+        clinicalNotes: "Frequent morning sneezing and clear rhinorrhea during harvest change. Saline nasal spray helpful.",
+        futureRiskAlert: "Non-sedating antihistamines (Levocetirizine / Fexofenadine) preferred during school examinations.",
+      },
+    ],
+    currentMedicines: [
+      {
+        id: "med-aarav-1",
+        name: "Cetirizine Syrup / Tablet",
+        dose: "5 mg",
+        frequency: "As needed for acute sneezing",
+        instructions: "Take at night after food",
+      },
+    ],
+    prescriptions: [],
+    labFiles: [],
+    accessCode: {
+      patientId: "FAM-04",
+      code: "518392",
+      generatedAt: Date.now(),
+      expiresAt: Date.now() + 15 * 60 * 1000,
+      isActive: true,
+    },
+  },
+];
+
+const INITIAL_BOOKED_APPOINTMENTS: BookedAppointment[] = [
+  {
+    id: "APT-8821",
+    tokenNumber: "OPD-TKT-8821",
+    patientId: "FAM-03",
+    patientName: "Ramprasad Kumar",
+    relationship: "Father",
+    doctorId: "DOC-IIITD-01",
+    doctorName: "Dr. Rajesh Sharma",
+    hospitalName: "IIIT Delhi Hospital",
+    specialty: "Interventional Cardiology & CMO",
+    slotDate: "Today, 29 Oct 2026",
+    slotTime: "04:30 PM",
+    consultationFee: 500,
+    chiefComplaint: "Routine cardiac follow-up and blood pressure review",
+    status: "Confirmed",
+    bookedAt: "29 Oct 2026, 09:15 AM",
+  },
+];
+
 class ClinicalStore {
   private medications: ActiveMedication[] = INITIAL_MEDICATIONS;
   private digitalPrescriptions: DigitalPrescription[] = INITIAL_DIGITAL_PRESCRIPTIONS;
@@ -739,6 +1097,9 @@ class ClinicalStore {
   private waitingPatients: WaitingEarlyArrivalPatient[] = INITIAL_WAITING_PATIENTS;
   private hospitalPatients: HospitalPatient[] = INITIAL_HOSPITAL_PATIENTS;
   private doctors: DoctorProfile[] = INITIAL_DOCTORS;
+  private familyMembers: FamilyMemberProfile[] = INITIAL_FAMILY_MEMBERS;
+  private activeMemberId: string = "FAM-01";
+  private bookedAppointments: BookedAppointment[] = INITIAL_BOOKED_APPOINTMENTS;
   private listeners: Set<() => void> = new Set();
 
   constructor() {
@@ -761,6 +1122,15 @@ class ClinicalStore {
 
         const hp = localStorage.getItem("mn_health_profile");
         if (hp) this.healthProfile = JSON.parse(hp);
+
+        const fam = localStorage.getItem("mn_family_members");
+        if (fam) this.familyMembers = JSON.parse(fam);
+
+        const act = localStorage.getItem("mn_active_member_id");
+        if (act) this.activeMemberId = JSON.parse(act);
+
+        const bkt = localStorage.getItem("mn_booked_appointments");
+        if (bkt) this.bookedAppointments = JSON.parse(bkt);
       } catch {}
     }
   }
@@ -774,6 +1144,9 @@ class ClinicalStore {
         localStorage.setItem("mn_queue_slots", JSON.stringify(this.queueSlots));
         localStorage.setItem("mn_waiting_patients", JSON.stringify(this.waitingPatients));
         localStorage.setItem("mn_health_profile", JSON.stringify(this.healthProfile));
+        localStorage.setItem("mn_family_members", JSON.stringify(this.familyMembers));
+        localStorage.setItem("mn_active_member_id", JSON.stringify(this.activeMemberId));
+        localStorage.setItem("mn_booked_appointments", JSON.stringify(this.bookedAppointments));
       } catch {}
     }
     this.notify();
@@ -828,9 +1201,60 @@ class ClinicalStore {
     profile?: PatientHealthProfile;
     medications?: ActiveMedication[];
     prescriptions?: DigitalPrescription[];
+    organConditions?: OrganConditionRecord[];
+    familyMember?: FamilyMemberProfile;
   } {
     const pId = patientId.trim().toUpperCase();
     const code = enteredCode.trim();
+
+    // Check if matching a family member profile
+    const famMember = this.familyMembers.find(
+      (m) =>
+        m.id.toUpperCase() === pId ||
+        m.name.toUpperCase().includes(pId) ||
+        (m.abhaId && m.abhaId.toUpperCase() === pId) ||
+        pId.includes("FAM")
+    );
+
+    if (famMember) {
+      const activeCode = famMember.accessCode || this.accessCode;
+      if (code !== activeCode.code && code !== this.accessCode.code) {
+        return {
+          success: false,
+          error: "INVALID CONSENT CODE: The code entered does not match this family member's active one-time access token.",
+        };
+      }
+      return {
+        success: true,
+        patient: {
+          ...this.aiReport,
+          patientId: famMember.id,
+          patientName: famMember.name,
+          age: famMember.age,
+          gender: famMember.gender,
+        },
+        profile: {
+          patientId: famMember.id,
+          patientName: famMember.name,
+          age: famMember.age,
+          gender: famMember.gender,
+          bloodGroup: famMember.bloodGroup,
+          simpleSummary: `Active ${famMember.relationship} profile under family phone ${famMember.phone}.`,
+          allergies: [...famMember.allergies],
+          genetics: [],
+          vaccinations: [],
+          currentMedicines: [...famMember.currentMedicines],
+          labFiles: [...famMember.labFiles],
+        },
+        medications: [...this.medications],
+        prescriptions:
+          famMember.prescriptions && famMember.prescriptions.length > 0
+            ? famMember.prescriptions
+            : this.getDigitalPrescriptions(famMember.id),
+        organConditions: [...(famMember.organConditions || [])],
+        familyMember: famMember,
+      };
+    }
 
     if (pId !== "RAMESH-54" && pId !== "91-8273-1928-3920" && !pId.includes("RAMESH")) {
       return {
@@ -868,6 +1292,8 @@ class ClinicalStore {
       profile: this.getHealthProfile(),
       medications: [...this.medications],
       prescriptions: this.getDigitalPrescriptions(pId),
+      organConditions: this.familyMembers[0]?.organConditions || [],
+      familyMember: this.familyMembers[0],
     };
   }
 
@@ -1400,6 +1826,167 @@ class ClinicalStore {
 
   public getAllDoctors(): DoctorProfile[] {
     return [...this.doctors];
+  }
+
+  // --- Family Member Management (Single Phone, Multi-Profile) ---
+  public getFamilyMembers(): FamilyMemberProfile[] {
+    return JSON.parse(JSON.stringify(this.familyMembers));
+  }
+
+  public getActiveMemberId(): string {
+    return this.activeMemberId;
+  }
+
+  public setActiveMemberId(id: string): void {
+    const found = this.familyMembers.find((m) => m.id === id);
+    if (found) {
+      this.activeMemberId = id;
+      this.healthProfile.patientId = found.id;
+      this.healthProfile.patientName = found.name;
+      this.healthProfile.age = found.age;
+      this.healthProfile.gender = found.gender;
+      this.healthProfile.bloodGroup = found.bloodGroup;
+      this.healthProfile.allergies = [...found.allergies];
+      this.healthProfile.currentMedicines = [...found.currentMedicines];
+      this.healthProfile.labFiles = [...found.labFiles];
+      this.accessCode = { ...found.accessCode };
+      this.persist();
+    }
+  }
+
+  public getActiveFamilyMember(): FamilyMemberProfile {
+    const member = this.familyMembers.find((m) => m.id === this.activeMemberId);
+    return member ? JSON.parse(JSON.stringify(member)) : JSON.parse(JSON.stringify(this.familyMembers[0]));
+  }
+
+  public addFamilyMember(memberData: {
+    name: string;
+    relationship: FamilyMemberProfile["relationship"];
+    age: number;
+    gender: string;
+    bloodGroup: string;
+    phone?: string;
+    allergies?: string[];
+  }): FamilyMemberProfile {
+    const newId = `FAM-${String(this.familyMembers.length + 1).padStart(2, "0")}`;
+    const newMember: FamilyMemberProfile = {
+      id: newId,
+      relationship: memberData.relationship,
+      name: memberData.name.trim(),
+      age: Number(memberData.age) || 30,
+      gender: memberData.gender || "Male",
+      bloodGroup: memberData.bloodGroup || "O+",
+      phone: memberData.phone || "+91 98765 43210",
+      allergies: memberData.allergies || [],
+      organConditions: [],
+      currentMedicines: [],
+      prescriptions: [],
+      labFiles: [],
+      accessCode: {
+        patientId: newId,
+        code: Math.floor(100000 + Math.random() * 900000).toString(),
+        generatedAt: Date.now(),
+        expiresAt: Date.now() + 15 * 60 * 1000,
+        isActive: true,
+      },
+    };
+    this.familyMembers.push(newMember);
+    this.persist();
+    return newMember;
+  }
+
+  // --- Organ-Based Longitudinal Medical History ---
+  public addOrganCondition(
+    memberId: string,
+    condition: Omit<OrganConditionRecord, "id">
+  ): OrganConditionRecord {
+    const newRecord: OrganConditionRecord = {
+      ...condition,
+      id: `org-${Date.now()}`,
+    };
+    const member = this.familyMembers.find((m) => m.id === memberId);
+    if (member) {
+      if (!member.organConditions) member.organConditions = [];
+      member.organConditions.unshift(newRecord);
+      this.persist();
+    }
+    return newRecord;
+  }
+
+  public updateOrganCondition(
+    memberId: string,
+    conditionId: string,
+    updates: Partial<OrganConditionRecord>
+  ): boolean {
+    const member = this.familyMembers.find((m) => m.id === memberId);
+    if (!member || !member.organConditions) return false;
+    const idx = member.organConditions.findIndex((c) => c.id === conditionId);
+    if (idx === -1) return false;
+    member.organConditions[idx] = {
+      ...member.organConditions[idx],
+      ...updates,
+    };
+    this.persist();
+    return true;
+  }
+
+  public deleteOrganCondition(memberId: string, conditionId: string): boolean {
+    const member = this.familyMembers.find((m) => m.id === memberId);
+    if (!member || !member.organConditions) return false;
+    member.organConditions = member.organConditions.filter((c) => c.id !== conditionId);
+    this.persist();
+    return true;
+  }
+
+  // --- Appointment Booking System (Triage & Token Number) ---
+  public bookAppointment(data: {
+    patientId: string;
+    patientName: string;
+    relationship: string;
+    doctorId: string;
+    doctorName: string;
+    hospitalName: string;
+    specialty: string;
+    slotDate: string;
+    slotTime: string;
+    consultationFee: number;
+    chiefComplaint: string;
+  }): BookedAppointment {
+    const tokenRandom = Math.floor(1000 + Math.random() * 9000);
+    const newAppointment: BookedAppointment = {
+      id: `APT-${Date.now()}`,
+      tokenNumber: `OPD-TKT-${tokenRandom}`,
+      ...data,
+      status: "Confirmed",
+      bookedAt:
+        new Date().toLocaleDateString("en-IN", {
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
+        }) +
+        ", " +
+        new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }),
+    };
+    this.bookedAppointments.unshift(newAppointment);
+    this.persist();
+    return newAppointment;
+  }
+
+  public getBookedAppointments(memberId?: string): BookedAppointment[] {
+    if (memberId) {
+      return this.bookedAppointments.filter((a) => a.patientId === memberId);
+    }
+    return [...this.bookedAppointments];
+  }
+
+  public cancelAppointment(appointmentId: string): boolean {
+    const app = this.bookedAppointments.find((a) => a.id === appointmentId);
+    if (app) {
+      app.status = "Cancelled";
+      this.persist();
+      return true;
+    }
+    return false;
   }
 }
 
